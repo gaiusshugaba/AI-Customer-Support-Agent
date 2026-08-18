@@ -1,0 +1,68 @@
+[
+  {
+    "path": "knowledge-base/b2b-saas/account-management.md",
+    "doc_id": "kb-b2b-004",
+    "tenant_id": "b2b-saas-demo",
+    "industry_pack": "saas",
+    "title": "Account & Team Management",
+    "category": "account",
+    "version": "1.0",
+    "last_updated": "2026-07-28",
+    "file_type": "md"
+  },
+  {
+    "path": "knowledge-base/b2b-saas/api-authentication.md",
+    "doc_id": "kb-b2b-002",
+    "tenant_id": "b2b-saas-demo",
+    "industry_pack": "saas",
+    "title": "API Authentication",
+    "category": "technical",
+    "version": "1.2",
+    "last_updated": "2026-07-15",
+    "file_type": "md"
+  },
+  {
+    "path": "knowledge-base/b2b-saas/billing-faq.md",
+    "doc_id": "kb-b2b-003",
+    "tenant_id": "b2b-saas-demo",
+    "industry_pack": "saas",
+    "title": "Billing FAQ",
+    "category": "billing",
+    "version": "1.0",
+    "last_updated": "2026-06-20",
+    "file_type": "md"
+  },
+  {
+    "path": "knowledge-base/b2b-saas/product-overview.md",
+    "doc_id": "kb-b2b-001",
+    "tenant_id": "b2b-saas-demo",
+    "industry_pack": "saas",
+    "title": "Product Overview",
+    "category": "general",
+    "version": "1.0",
+    "last_updated": "2026-08-01",
+    "file_type": "md"
+  },
+  {
+    "path": "knowledge-base/b2b-saas/webhooks.md",
+    "doc_id": "kb-b2b-005",
+    "tenant_id": "b2b-saas-demo",
+    "industry_pack": "saas",
+    "title": "Webhooks & Event Triggers",
+    "category": "technical",
+    "version": "1.0",
+    "last_updated": "2026-07-30",
+    "file_type": "md"
+  },
+  {
+    "path": "knowledge-base/b2b-saas/sla-and-support-tiers.pdf",
+    "doc_id": "kb-b2b-006",
+    "tenant_id": "b2b-saas-demo",
+    "industry_pack": "saas",
+    "title": "SLA & Support Tiers",
+    "category": "account",
+    "version": "1.0",
+    "last_updated": "2026-08-01",
+    "file_type": "pdf"
+  }
+]

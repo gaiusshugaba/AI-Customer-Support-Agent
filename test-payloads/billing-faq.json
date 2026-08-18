@@ -1,0 +1,11 @@
+{
+  "doc_id": "kb-b2b-003",
+  "tenant_id": "b2b-saas-demo",
+  "industry_pack": "saas",
+  "title": "Billing FAQ",
+  "category": "billing",
+  "version": "1.0",
+  "last_updated": "2026-06-20",
+  "file_type": "md",
+  "file_content": "# Billing FAQ\n\n## How am I billed?\n\nFlowStack bills monthly in advance, on the same calendar date you first subscribed. Enterprise plans may be billed annually by invoice \u2014 contact your account manager to switch billing cadence.\n\n## What happens if I exceed my execution limit?\n\nOn Starter and Growth plans, workflows are paused for the remainder of the billing cycle once you hit your execution limit. You'll receive an email warning at 80% and 100% of your limit. Execution counting resets at the start of the next billing cycle. Enterprise plans do not have hard execution caps; overages are billed at a per-execution rate defined in your contract.\n\n## Can I change plans mid-cycle?\n\nYes. Upgrades take effect immediately and you're charged a prorated amount for the remainder of the current cycle. Downgrades take effect at the start of the next billing cycle \u2014 you keep your current plan's features until then.\n\n## How do I update my payment method?\n\nGo to **Settings \u2192 Billing \u2192 Payment Methods**. You can add a new card and set it as default. Failed payments are retried automatically three times over 7 days before the account is downgraded to Starter.\n\n## Do you offer refunds?\n\nWe don't offer prorated refunds for downgrades or cancellations mid-cycle. If you believe you were charged in error, contact support and we'll review it on a case-by-case basis.\n\n## Where can I find my invoices?\n\nAll invoices are available under **Settings \u2192 Billing \u2192 Invoice History**, and are also emailed to the account's billing contact at the time of charge."
+}

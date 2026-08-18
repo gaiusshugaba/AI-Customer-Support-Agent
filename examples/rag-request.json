@@ -1,0 +1,7 @@
+{
+  "tenant_id": "b2b-saas-demo",
+  "conversation_id": "demo-001",
+  "customer_id": "cust-001",
+  "channel": "chat",
+  "text": "What's your rate limit on the Growth plan?"
+}

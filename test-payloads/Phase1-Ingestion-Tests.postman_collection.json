@@ -1,0 +1,178 @@
+{
+  "info": {
+    "name": "Phase 1 - Knowledge Ingestion Test Suite",
+    "description": "Test payloads for the AI Customer Support Platform's Phase 1 ingestion workflow. Set the 'webhook_url' collection variable to your n8n test or production webhook URL before running. Run requests top to bottom; the last one is a deliberate failure test to confirm the validation/error-handling branches work.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "webhook_url",
+      "value": "https://your-n8n-instance/webhook-test/kb-ingest",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Ingest - Product Overview",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"doc_id\": \"kb-b2b-001\",\n  \"tenant_id\": \"b2b-saas-demo\",\n  \"industry_pack\": \"saas\",\n  \"title\": \"Product Overview\",\n  \"category\": \"general\",\n  \"version\": \"1.0\",\n  \"last_updated\": \"2026-08-01\",\n  \"file_type\": \"md\",\n  \"file_content\": \"# Product Overview\\n\\n## What is FlowStack?\\n\\nFlowStack is a workflow automation platform that lets teams connect their business tools (CRM, support desk, billing, internal apps) without writing custom integration code. Customers use FlowStack to automate repetitive processes such as lead routing, ticket escalation, invoice reminders, and data syncing between systems.\\n\\n## Plans\\n\\nFlowStack is offered on three plans:\\n\\n- **Starter** \\u2014 up to 3 active workflows, 5,000 workflow executions/month, community support only.\\n- **Growth** \\u2014 up to 25 active workflows, 50,000 executions/month, email support with 24-hour response SLA.\\n- **Enterprise** \\u2014 unlimited workflows, custom execution volume, dedicated support with 4-hour response SLA, single sign-on (SSO), and a dedicated account manager.\\n\\n## Core Concepts\\n\\n- **Workflow**: A sequence of connected steps (trigger + actions) that runs automatically when a defined event occurs.\\n- **Trigger**: The event that starts a workflow (e.g., \\\"new form submission,\\\" \\\"invoice overdue\\\").\\n- **Connector**: A pre-built integration to a third-party service (e.g., Salesforce, Zendesk, Stripe).\\n- **Execution**: A single run of a workflow from trigger to completion. Executions are what count against your monthly plan limit.\\n\\n## Getting Started\\n\\nNew accounts start with a 14-day free trial on the Growth plan. No credit card is required to start a trial. At the end of the trial, accounts are automatically downgraded to Starter unless a paid plan is selected.\"\n}"
+        },
+        "url": {
+          "raw": "{{webhook_url}}",
+          "host": [
+            "{{webhook_url}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Ingest - API Authentication",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"doc_id\": \"kb-b2b-002\",\n  \"tenant_id\": \"b2b-saas-demo\",\n  \"industry_pack\": \"saas\",\n  \"title\": \"API Authentication\",\n  \"category\": \"technical\",\n  \"version\": \"1.2\",\n  \"last_updated\": \"2026-07-15\",\n  \"file_type\": \"md\",\n  \"file_content\": \"# API Authentication\\n\\n## Overview\\n\\nFlowStack's REST API uses API keys for authentication. Every request to the API must include a valid key in the `Authorization` header.\\n\\n## Generating an API Key\\n\\n1. Go to **Settings \\u2192 API Keys** in your FlowStack dashboard.\\n2. Click **Generate New Key**.\\n3. Name the key (e.g., \\\"Production Server\\\") and select its scope: `read-only`, `read-write`, or `admin`.\\n4. Copy the key immediately \\u2014 for security reasons, the full key is only shown once.\\n\\n## Using the Key\\n\\nInclude the key in every request as a Bearer token:\\n\\n```\\nAuthorization: Bearer fs_live_xxxxxxxxxxxxxxxx\\n```\\n\\nKeys prefixed `fs_live_` are production keys. Keys prefixed `fs_test_` are sandbox keys and do not affect live workflows or billing.\\n\\n## Key Rotation\\n\\nAPI keys do not expire automatically, but we recommend rotating production keys every 90 days. To rotate a key without downtime, generate a new key, update your integration to use it, confirm requests are succeeding with the new key, then revoke the old key from the API Keys settings page.\\n\\n## Rate Limits\\n\\n- Starter and Growth plans: 100 requests/minute per key.\\n- Enterprise plans: 1,000 requests/minute per key, with the option to request higher limits.\\n\\nExceeding the rate limit returns a `429 Too Many Requests` response with a `Retry-After` header indicating how many seconds to wait.\\n\\n## Common Errors\\n\\n- `401 Unauthorized` \\u2014 key is missing, malformed, or revoked.\\n- `403 Forbidden` \\u2014 key is valid but lacks scope for the requested action (e.g., a `read-only` key attempting a write).\\n- `429 Too Many Requests` \\u2014 rate limit exceeded.\"\n}"
+        },
+        "url": {
+          "raw": "{{webhook_url}}",
+          "host": [
+            "{{webhook_url}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Ingest - Billing FAQ",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"doc_id\": \"kb-b2b-003\",\n  \"tenant_id\": \"b2b-saas-demo\",\n  \"industry_pack\": \"saas\",\n  \"title\": \"Billing FAQ\",\n  \"category\": \"billing\",\n  \"version\": \"1.0\",\n  \"last_updated\": \"2026-06-20\",\n  \"file_type\": \"md\",\n  \"file_content\": \"# Billing FAQ\\n\\n## How am I billed?\\n\\nFlowStack bills monthly in advance, on the same calendar date you first subscribed. Enterprise plans may be billed annually by invoice \\u2014 contact your account manager to switch billing cadence.\\n\\n## What happens if I exceed my execution limit?\\n\\nOn Starter and Growth plans, workflows are paused for the remainder of the billing cycle once you hit your execution limit. You'll receive an email warning at 80% and 100% of your limit. Execution counting resets at the start of the next billing cycle. Enterprise plans do not have hard execution caps; overages are billed at a per-execution rate defined in your contract.\\n\\n## Can I change plans mid-cycle?\\n\\nYes. Upgrades take effect immediately and you're charged a prorated amount for the remainder of the current cycle. Downgrades take effect at the start of the next billing cycle \\u2014 you keep your current plan's features until then.\\n\\n## How do I update my payment method?\\n\\nGo to **Settings \\u2192 Billing \\u2192 Payment Methods**. You can add a new card and set it as default. Failed payments are retried automatically three times over 7 days before the account is downgraded to Starter.\\n\\n## Do you offer refunds?\\n\\nWe don't offer prorated refunds for downgrades or cancellations mid-cycle. If you believe you were charged in error, contact support and we'll review it on a case-by-case basis.\\n\\n## Where can I find my invoices?\\n\\nAll invoices are available under **Settings \\u2192 Billing \\u2192 Invoice History**, and are also emailed to the account's billing contact at the time of charge.\"\n}"
+        },
+        "url": {
+          "raw": "{{webhook_url}}",
+          "host": [
+            "{{webhook_url}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Ingest - Account & Team Management",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"doc_id\": \"kb-b2b-004\",\n  \"tenant_id\": \"b2b-saas-demo\",\n  \"industry_pack\": \"saas\",\n  \"title\": \"Account & Team Management\",\n  \"category\": \"account\",\n  \"version\": \"1.0\",\n  \"last_updated\": \"2026-07-28\",\n  \"file_type\": \"md\",\n  \"file_content\": \"# Account & Team Management\\n\\n## User Roles\\n\\nFlowStack accounts support three roles:\\n\\n- **Owner** \\u2014 one per account, billing access, can delete the account, can transfer ownership.\\n- **Admin** \\u2014 can manage workflows, connectors, and team members, but cannot change billing or delete the account.\\n- **Member** \\u2014 can build and edit workflows they have access to, cannot manage team members or billing.\\n\\n## Inviting Team Members\\n\\nGo to **Settings \\u2192 Team \\u2192 Invite Member**, enter their email and select a role. Invitees receive an email with a signup link valid for 7 days. Growth and Enterprise plans support unlimited team members; Starter is capped at 3 seats.\\n\\n## Single Sign-On (SSO)\\n\\nSSO (SAML 2.0) is available on Enterprise plans only. Once configured by your account manager, team members sign in through your identity provider and new accounts are provisioned automatically on first login \\u2014 you don't need to send individual invites once SSO is active.\\n\\n## Changing Account Email\\n\\nOnly the account Owner can change the primary account email, under **Settings \\u2192 Account \\u2192 Email**. A confirmation link is sent to both the old and new address; the change only takes effect once the new address is confirmed. This is a security measure and cannot be bypassed by support.\\n\\n## Deleting Your Account\\n\\nAccount deletion is available to Owners only, under **Settings \\u2192 Account \\u2192 Delete Account**. This immediately stops all workflow executions and is irreversible after a 14-day grace period, during which you can contact support to restore the account. After 14 days, all workflow data, execution history, and connector credentials are permanently deleted.\\n\\n## Transferring Ownership\\n\\nGo to **Settings \\u2192 Team \\u2192 Transfer Ownership**, select the new owner (must already be an Admin on the account), and confirm via the email link sent to the current Owner. The current Owner is automatically downgraded to Admin once the transfer completes.\"\n}"
+        },
+        "url": {
+          "raw": "{{webhook_url}}",
+          "host": [
+            "{{webhook_url}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Ingest - Webhooks & Event Triggers",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"doc_id\": \"kb-b2b-005\",\n  \"tenant_id\": \"b2b-saas-demo\",\n  \"industry_pack\": \"saas\",\n  \"title\": \"Webhooks & Event Triggers\",\n  \"category\": \"technical\",\n  \"version\": \"1.0\",\n  \"last_updated\": \"2026-07-30\",\n  \"file_type\": \"md\",\n  \"file_content\": \"# Webhooks & Event Triggers\\n\\n## Overview\\n\\nFlowStack workflows can be triggered by an incoming webhook, letting external systems start a workflow by sending an HTTP request. Every workflow with a Webhook trigger gets a unique URL under `https://hooks.flowstack.io/{workflow_id}`.\\n\\n## Creating a Webhook Trigger\\n\\nAdd a **Webhook** trigger node to any workflow, choose the HTTP method (GET, POST, PUT, DELETE), and save the workflow. The unique URL appears in the trigger node's settings panel. Webhook triggers are inactive until the workflow itself is activated.\\n\\n## Testing vs Production URLs\\n\\nEvery webhook has two URLs: a **test URL** (only works while you have the workflow open in the editor and click \\\"Listen for Test Event\\\") and a **production URL** (works continuously once the workflow is activated). Sending real traffic to the test URL outside an active editor session will fail silently \\u2014 this is one of the most common support questions we get.\\n\\n## Securing a Webhook\\n\\nBy default, webhook URLs are unauthenticated \\u2014 anyone with the URL can trigger the workflow. To secure one, open the Webhook node's **Authentication** setting and choose either Header Auth (a shared secret header your caller must include) or Basic Auth. We recommend Header Auth for server-to-server integrations.\\n\\n## Payload Size Limits\\n\\nWebhook payloads are capped at 5MB on Starter and Growth plans, 25MB on Enterprise. Payloads exceeding the limit return a `413 Payload Too Large` response and the workflow does not execute.\\n\\n## Retrying Failed Webhook Deliveries\\n\\nFlowStack does not automatically retry a webhook trigger if your workflow fails partway through \\u2014 retry logic is the responsibility of whatever system is calling the webhook. If you need guaranteed delivery, have the caller implement retry-with-backoff on non-2xx responses, since a failed workflow execution returns a non-2xx status by default.\\n\\n## Event Triggers (vs Webhooks)\\n\\nEvent Triggers are different from Webhook triggers \\u2014 they fire automatically based on changes inside a connected app (e.g., \\\"new row in Airtable,\\\" \\\"new deal in Salesforce\\\") rather than an inbound HTTP call you construct yourself. Event Triggers are polling-based on Starter/Growth (checked every 5 minutes) and near-real-time on Enterprise (via native webhooks where the connected app supports them).\"\n}"
+        },
+        "url": {
+          "raw": "{{webhook_url}}",
+          "host": [
+            "{{webhook_url}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Ingest - SLA & Support Tiers",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"doc_id\": \"kb-b2b-006\",\n  \"tenant_id\": \"b2b-saas-demo\",\n  \"industry_pack\": \"saas\",\n  \"title\": \"SLA & Support Tiers\",\n  \"category\": \"account\",\n  \"version\": \"1.0\",\n  \"last_updated\": \"2026-08-01\",\n  \"file_type\": \"pdf\",\n  \"file_url\": \"REPLACE_WITH_A_URL_YOUR_N8N_INSTANCE_CAN_REACH\"\n}"
+        },
+        "url": {
+          "raw": "{{webhook_url}}",
+          "host": [
+            "{{webhook_url}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Deliberate Failure Test - Empty File Content",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"doc_id\": \"kb-b2b-001-EMPTY-TEST\",\n  \"tenant_id\": \"b2b-saas-demo\",\n  \"industry_pack\": \"saas\",\n  \"title\": \"Product Overview\",\n  \"category\": \"general\",\n  \"version\": \"1.0\",\n  \"last_updated\": \"2026-08-01\",\n  \"file_type\": \"md\",\n  \"file_content\": \"\"\n}"
+        },
+        "url": {
+          "raw": "{{webhook_url}}",
+          "host": [
+            "{{webhook_url}}"
+          ]
+        }
+      },
+      "response": [],
+      "description": "Sends a payload with empty file_content. Expected: Validate Extracted Text node takes its FALSE branch, Prepare Validation Error fires, and a status: failed row lands in Ingestion_Log with error_message 'Document contains no extractable text.'"
+    }
+  ]
+}

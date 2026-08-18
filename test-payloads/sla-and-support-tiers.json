@@ -1,0 +1,11 @@
+{
+  "doc_id": "kb-b2b-006",
+  "tenant_id": "b2b-saas-demo",
+  "industry_pack": "saas",
+  "title": "SLA & Support Tiers",
+  "category": "account",
+  "version": "1.0",
+  "last_updated": "2026-08-01",
+  "file_type": "pdf",
+  "file_url": "REPLACE_WITH_A_URL_YOUR_N8N_INSTANCE_CAN_REACH"
+}

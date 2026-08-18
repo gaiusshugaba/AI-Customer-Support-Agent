@@ -1,0 +1,3341 @@
+{
+  "name": "[Core] AI Customer Support Platform",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const ctx = $json;\n\nreturn [{\n  json: {\n    status: 'failed',\n\n    doc_id:\n      ctx.doc_id ||\n      $('[INGEST] - Normalize Document').item.json.doc_id ||\n      '',\n\n    tenant_id:\n      ctx.tenant_id ||\n      $('[INGEST] - Normalize Document').item.json.tenant_id ||\n      '',\n\n    title:\n      ctx.title ||\n      $('[INGEST] - Normalize Document').item.json.title ||\n      '',\n\n    error_message:\n      'Document contains no extractable text.',\n\n    failed_node:\n      'Validate Extracted Text',\n\n    occurred_at:\n      new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3312,
+        432
+      ],
+      "id": "80a1ac75-401d-4835-bfd4-d507a8a5f22b",
+      "name": "Prepare Validation Error"
+    },
+    {
+      "parameters": {
+        "tableId": "request_errors",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "={{ $json.tenant_id }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $json.error_message }}"
+            },
+            {
+              "fieldId": "failed_node",
+              "fieldValue": "={{ $json.failed_node }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "occurred_at",
+              "fieldValue": "={{ $json.occurred_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        576,
+        1520
+      ],
+      "id": "cce3f53b-1253-407d-995c-05a5ea290214",
+      "name": "Supabase - Log Validation Error",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AWapg2iswUxnGF2X",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"error\": \"Invalid request\",\n  \"details\": \"Missing required field: tenant_id, conversation_id, or text\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        800,
+        1520
+      ],
+      "id": "406d2060-98ad-429c-a76d-36b79d883ca8",
+      "name": "Respond - Validation Error"
+    },
+    {
+      "parameters": {
+        "tableId": "conversation_turns",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "={{ $json.tenant_id }}"
+            },
+            {
+              "fieldId": "conversation_id",
+              "fieldValue": "={{ $json.conversation_id }}"
+            },
+            {
+              "fieldId": "role",
+              "fieldValue": "user"
+            },
+            {
+              "fieldId": "text",
+              "fieldValue": "={{ $json.text }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        8064,
+        1888
+      ],
+      "id": "064846f2-e3ce-4f6f-9f31-bffc6d511a87",
+      "name": "Write User Turn",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AWapg2iswUxnGF2X",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const err = $json.error?.message || 'Unknown Supabase write error';\nconst tenant_id = $json.tenant_id || 'unknown';\n\nreturn [{\n  json: {\n    tenant_id,\n    error_message: err,\n    failed_node: $node.name,\n    status: 'failed',\n    occurred_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8512,
+        1792
+      ],
+      "id": "6e7e94e4-2cda-400e-8b05-958d9a4218a6",
+      "name": "Log Write Failure"
+    },
+    {
+      "parameters": {
+        "tableId": "request_errors",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "={{ $json.tenant_id }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $json.error_message }}"
+            },
+            {
+              "fieldId": "failed_node",
+              "fieldValue": "={{ $json.failed_node }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "occurred_at",
+              "fieldValue": "={{ $json.occurred_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        8736,
+        1792
+      ],
+      "id": "4bb570f6-0475-4d3c-b139-f06db9300fd3",
+      "name": "Supabase - Log Validation Error1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AWapg2iswUxnGF2X",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    tenant_id: $json.tenant_id || 'unknown',\n    error_message: 'Missing required field: tenant_id, conversation_id, or text',\n    failed_node: 'Validate Input',\n    status: 'failed',\n    occurred_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        1520
+      ],
+      "id": "aa80858d-38d6-48d9-8875-af913c6ac8a5",
+      "name": "Prepare Validation Error1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "kb-ingest",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -320,
+        160
+      ],
+      "id": "08d8e03c-1445-46a5-aa49-597a5aa6d4d9",
+      "name": "[INGEST] - Receive Document",
+      "webhookId": "2f1186af-a82c-4bbb-8437-0306e22fbfc0"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: $json.body }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        160
+      ],
+      "id": "bf64575d-1ba8-4d73-8f43-f381448778f7",
+      "name": "[INGEST] - Unwrap Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const source = $json;\n\nreturn [{\n  json: {\n    ...source,\n\n    decision_context: {\n      tenant_id: source.tenant_id,\n      conversation_id: source.conversation_id,\n      response_text: source.response_text,\n      intent: source.intent || 'general',\n      risk_flags: Array.isArray(source.risk_flags) ? source.risk_flags : [],\n      requires_account_context: source.requires_account_context ?? false,\n      confidence_score: Number(source.confidence_score ?? 0),\n      retrieval_score: Number(source.retrieval_score ?? 0),\n      confidence_threshold: Number(\n        source.tenant_config?.confidence_threshold ?? 0.7\n      ),\n      similarity_threshold: Number(\n        source.tenant_config?.similarity_threshold ?? 0.75\n      )\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4672,
+        1392
+      ],
+      "id": "342c29da-bc5d-487c-9f83-afe0f1eb68af",
+      "name": "[GUARDRAIL] - Prepare Decision Context"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "607eb5dc-1706-4e1a-90b2-4d6c5bda5bf3",
+              "leftValue": "={{ $json.decision_context.risk_flags.length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4896,
+        1392
+      ],
+      "id": "d4d1611e-63eb-49c6-b700-6853a7000c1d",
+      "name": "[GUARDRAIL] - Check Risk"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    ...$json,\n    decision: 'escalate',\n    decision_reason: 'risk_flag_detected',\n    escalation_reasons: $json.decision_context.risk_flags\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5568,
+        1104
+      ],
+      "id": "68300b4c-521e-4033-aeb2-5bfdedba61e1",
+      "name": "[GUARDRAIL] - Prepare Risk Escalation"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "065d2187-fa1b-430d-950c-567eaa45676f",
+              "leftValue": "={{ $json.decision_context.retrieval_score }}",
+              "rightValue": "={{ $json.decision_context.similarity_threshold }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        5120,
+        1488
+      ],
+      "id": "ce669b17-00cd-4e6b-87e3-1c1f74892a44",
+      "name": "[GUARDRAIL] - Check Retrieval Quality"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    ...$json,\n    decision: 'escalate',\n    decision_reason: 'retrieval_below_threshold',\n    escalation_reasons: ['low_retrieval_quality']\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5568,
+        1680
+      ],
+      "id": "43facb35-90fa-4262-8f0b-aba6a6a7252d",
+      "name": "[GUARDRAIL] - Prepare Retrieval Escalation"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ebc30c26-93e2-4e88-966b-f705afc94595",
+              "leftValue": "={{ $json.decision_context.confidence_score }}",
+              "rightValue": "={{ $json.decision_context.confidence_threshold }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        5344,
+        1392
+      ],
+      "id": "6f6c6275-74b7-45d9-84b9-cfb8e7e32980",
+      "name": "[GUARDRAIL] - Check Confidence"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    ...$json,\n    decision: 'escalate',\n    decision_reason: 'confidence_below_threshold',\n    escalation_reasons: ['low_confidence']\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5568,
+        1488
+      ],
+      "id": "4f5e2d1e-1fc1-4956-9619-f1faee7b5e16",
+      "name": "[GUARDRAIL] - Prepare Confidence Escalation"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    ...$json,\n    decision: 'respond',\n    decision_reason: 'passed_guardrails',\n    escalation_reasons: []\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5568,
+        1296
+      ],
+      "id": "72e6f680-65a1-447a-a42e-3749b67065a5",
+      "name": "[GUARDRAIL] - Prepare Response Decision"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\n\nreturn [{\n  json: {\n    tenant_id: d.decision_context.tenant_id,\n    conversation_id: d.decision_context.conversation_id,\n    response_text: d.decision_context.response_text,\n    intent: d.decision_context.intent,\n    confidence_score: d.decision_context.confidence_score,\n    retrieval_score: d.decision_context.retrieval_score,\n    risk_flags: d.decision_context.risk_flags,\n    requires_account_context: d.decision_context.requires_account_context,\n\n    decision: d.decision,\n    decision_reason: d.decision_reason,\n    escalation_reasons: d.escalation_reasons\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5792,
+        1392
+      ],
+      "id": "65312479-0f05-42e1-b0f2-2e6e3e496ee4",
+      "name": "[GUARDRAIL] - Build Decision Result"
+    },
+    {
+      "parameters": {
+        "tableId": "conversation_turns",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "conversation_id",
+              "fieldValue": "={{ $json.conversation_id }}"
+            },
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "={{ $json.tenant_id }}"
+            },
+            {
+              "fieldId": "role",
+              "fieldValue": "assistant"
+            },
+            {
+              "fieldId": "text",
+              "fieldValue": "={{ $json.response_text }}"
+            },
+            {
+              "fieldId": "intent",
+              "fieldValue": "={{ $json.intent }}"
+            },
+            {
+              "fieldId": "confidence_score",
+              "fieldValue": "={{ $json.confidence_score }}"
+            },
+            {
+              "fieldId": "retrieval_score",
+              "fieldValue": "={{ $json.retrieval_score }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        8288,
+        1664
+      ],
+      "id": "7b342bb5-d9f6-49e0-b563-be575cb6495d",
+      "name": "[MEMORY] - Save Assistant Turn",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AWapg2iswUxnGF2X",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\n\nreturn [{\n  json: {\n    response_text: d.response_text,\n    decision: d.decision,\n    decision_reason: d.decision_reason,\n    intent: d.intent,\n    confidence_score: d.confidence_score,\n    retrieval_score: d.retrieval_score,\n    risk_flags: d.risk_flags,\n    conversation_id: d.conversation_id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8288,
+        1232
+      ],
+      "id": "4907a21b-5c17-4024-b0e3-91d5ede69998",
+      "name": "[CHAT] - Build Final Response"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        8512,
+        1232
+      ],
+      "id": "e5cd891b-656d-4f0b-9d01-6419cb20b605",
+      "name": "[CHAT] - Respond"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "conversation-message",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -320,
+        1424
+      ],
+      "id": "4e6ad4cd-8d2c-4d55-9977-423804f9ab66",
+      "name": "[CHAT] - Receive Message",
+      "webhookId": "ad7bd014-aceb-4e1e-b213-8fea931ea513"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: $json.body }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        1424
+      ],
+      "id": "a1e2d1c9-4ae2-47d1-8990-a6cf951208cc",
+      "name": "[CHAT] - Unwrap Request"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dd86eb0e-c4b4-4d9c-9c97-c1496a1cc429",
+              "leftValue": "={{ $json.tenant_id && $json.conversation_id && $json.text && $json.text.trim().length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        128,
+        1424
+      ],
+      "id": "9c04d631-9208-49da-99bc-b0696ed17c62",
+      "name": "[CHAT] - Validate Message"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tenant_config",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "={{$json.tenant_id}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        352,
+        1328
+      ],
+      "id": "e034cf3f-7d78-4098-a19a-9d52b2867ba2",
+      "name": "[CHAT] - Load Tenant Config",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "AWapg2iswUxnGF2X",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "customers",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "customer_id",
+              "condition": "eq",
+              "keyValue": "={{ $('[CHAT] - Validate Message').item.json.customer_id }}"
+            },
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "={{ $('[CHAT] - Validate Message').item.json.tenant_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        576,
+        1328
+      ],
+      "id": "37450dfc-e30a-4ee1-b361-8731a109ea89",
+      "name": "[CHAT] - Load Customer Context",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "AWapg2iswUxnGF2X",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "conversation_turns",
+        "returnAll": true,
+        "orderBy": "=timestamp",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "conversation_id",
+              "condition": "eq",
+              "keyValue": "={{ $('[CHAT] - Validate Message').item.json.conversation_id }}"
+            },
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "={{ $('[CHAT] - Validate Message').item.json.tenant_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        800,
+        1328
+      ],
+      "id": "a4e519a6-9c6f-459a-8464-ff31c2ec2c36",
+      "name": "[CHAT] - Load Conversation History",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "AWapg2iswUxnGF2X",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const message = $('[CHAT] - Unwrap Request').item.json;\n   const tenantConfig = $('[CHAT] - Load Tenant Config').first()?.json || {};\n   const customer = $('[CHAT] - Load Customer Context').first()?.json || {};\n   const historyItems = $('[CHAT] - Load Conversation History').all();\n\n  const conversation_history = historyItems\n  .filter(i => i.json && i.json.role && i.json.text)\n  .map(i => `${i.json.role}: ${i.json.text}`)\n  .join('\\n');\n\n   return [{\n     json: {\n       ...message,\n       tenant_config: tenantConfig,\n       customer_context: customer,\n       conversation_history\n     }\n   }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        1328
+      ],
+      "id": "37976df6-cba6-4432-b534-6e19f891bbf0",
+      "name": "[CHAT] - Build Conversation Context"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $json;\n\n   const allowedCategories = ctx.tenant_config.industry_pack === 'saas'\n     ? 'billing, technical, account, general'\n     : 'orders, returns, shipping, payments, general';\n\n   const template = `You are an intent classifier for a customer support system. Read the customer's message and the recent conversation turns provided. Return ONLY valid JSON, no other text, in this exact shape:\n\n   {\n     \"intent\": \"<one of the allowed categories>\",\n     \"risk_flags\": [\"<zero or more of: security, billing_dispute, legal, churn_threat>\"],\n     \"requires_account_context\": <true|false>\n   }\n\n   Allowed categories for this tenant: ${allowedCategories}\n\n   Rules:\n   - Choose exactly one intent from the allowed list. If nothing fits well, use \"general\".\n   - Flag \"security\" for anything involving account compromise, suspicious access, or credential exposure.\n   - Flag \"billing_dispute\" for disputed charges, refund demands, or chargebacks \u2014 not routine billing questions.\n   - Flag \"legal\" for anything mentioning lawsuits, regulators, or formal complaints.\n   - Flag \"churn_threat\" if the customer explicitly threatens to cancel or leave.\n   - Set requires_account_context to true if answering requires knowing this specific customer's plan, order, or account state.\n\n   Conversation so far:\n   ${ctx.conversation_history || '(none)'}\n\n   Customer's latest message:\n   ${ctx.text}`;\n\n   return [{ json: { ...ctx, classification_prompt: template } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        1392
+      ],
+      "id": "37855c11-b300-4389-bcd5-52ca70805ad7",
+      "name": "[RAG] - Build Intent Prompt"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.classification_prompt}}",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2144,
+        1392
+      ],
+      "id": "56d2b021-19c8-4b6c-bc08-c984821f95a4",
+      "name": "[RAG] - Classify Intent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const classification = $json.output || {};\nconst original = $('[RAG] - Build Intent Prompt').item.json;\n\nreturn [{\n  json: {\n    ...original,\n    intent: classification.intent || 'general',\n    risk_flags: classification.risk_flags || [],\n    requires_account_context: classification.requires_account_context ?? false\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2560,
+        1392
+      ],
+      "id": "4ee33345-2989-4f66-9414-8111963a8085",
+      "name": "[RAG] - Extract Intent Signals"
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "customer-support-kb",
+          "mode": "list",
+          "cachedResultName": "customer-support-kb"
+        },
+        "prompt": "={{$json.text}}",
+        "options": {
+          "pineconeNamespace": "={{$json.tenant_id}}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        2848,
+        1392
+      ],
+      "id": "d528030d-eb9d-4736-b85f-9fb00a2c4a14",
+      "name": "[RAG] - Retrieve Knowledge",
+      "credentials": {
+        "pineconeApi": {
+          "id": "2qW3vCi7Fwg8tSHC",
+          "name": "Pinecone account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n     \"intent\": \"technical\",\n     \"risk_flags\": [\"security\"],\n     \"requires_account_context\": true\n   }"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2288,
+        1632
+      ],
+      "id": "8a39a872-1a53-448d-9f19-e4b8535ff07c",
+      "name": "[RAG] - Parse Intent Output"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2848,
+        1584
+      ],
+      "id": "f485c747-e516-4bf4-962b-90f2cb6acd4d",
+      "name": "[RAG] - Gemini Query Embeddings",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "b86t9ijdbERxzXBC",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.all();\nconst original = $('[RAG] - Extract Intent Signals').item.json;\n\nconst context = results\n  .map(r => `[${r.json.document.metadata.section_heading}] ${r.json.document.pageContent}`)\n  .join('\\n\\n');\n\nconst retrieval_score = results.length > 0 ? results[0].json.score : 0;\n\nreturn [{\n  json: {\n    ...original,\n    retrieved_context: context,\n    retrieval_score\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3200,
+        1392
+      ],
+      "id": "00deb87f-6b20-48b2-babe-0a5a1645c218",
+      "name": "[RAG] - Build Retrieved Context"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "581c09ce-f838-45bd-9c6d-1f21435d4df0",
+              "leftValue": "={{ $json.retrieval_score > 0 && $json.retrieved_context && $json.retrieved_context.trim().length > 0 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3424,
+        1392
+      ],
+      "id": "b06df0ff-9a74-4402-9f8c-9e4a879c593c",
+      "name": "[RAG] - Validate Retrieval"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $json;\n\nconst template = `You are a customer support assistant for ${ctx.tenant_config.tenant_name || 'this company'}. Answer the customer's question using ONLY the information in the \"Retrieved Context\" below. Do not use any outside knowledge.\n\nRules:\n- If the retrieved context fully answers the question, answer clearly and concisely, citing the relevant plan/section by name where natural.\n- If the retrieved context only partially answers it, answer what you can and clearly state what's missing.\n- If the retrieved context does not contain the answer at all, say so plainly \u2014 do not guess or fill the gap from general knowledge.\n- Never invent specific numbers, prices, or policy details not present in the retrieved context.\n- Keep the tone helpful and direct, matching a professional support agent.\n\nRetrieved Context:\n${ctx.retrieved_context || '(no relevant context found)'}\n\nConversation so far:\n${ctx.conversation_history || '(none)'}\n\nCustomer's latest message:\n${ctx.text}`;\n\nreturn [{ json: { ...ctx, generation_prompt: template } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3648,
+        1280
+      ],
+      "id": "6d734351-2ee0-45ce-8110-6461972d28c9",
+      "name": "[RAG] - Build Response Prompt"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.generation_prompt}}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        4096,
+        1280
+      ],
+      "id": "66693906-ebd4-4a23-85a0-72f170c0ff74",
+      "name": "[RAG] - Generate Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const generatedText = $json.text;\nconst original = $('[RAG] - Build Retrieved Context').item.json;\n\n// Simple, explainable confidence heuristic \u2014 NOT self-reported by the LLM.\n// Starts from retrieval_score (how well context matched the question),\n// then penalizes for risk flags or a clearly empty/refused answer.\nlet confidence_score = original.retrieval_score;\n\nif (original.risk_flags && original.risk_flags.length > 0) {\n  confidence_score -= 0.15;\n}\n\nconst noContextPhrases = ['does not contain', 'no relevant', \"don't have\", 'cannot find'];\nif (noContextPhrases.some(p => generatedText.toLowerCase().includes(p))) {\n  confidence_score -= 0.3;\n}\n\nconfidence_score = Math.max(0, Math.min(1, confidence_score));\n\nreturn [{\n  json: {\n    ...original,\n    response_text: generatedText,\n    confidence_score\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4448,
+        1280
+      ],
+      "id": "67885e86-38e9-43e4-bf41-2cdbb1ad115c",
+      "name": "[RAG] - Score Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const original = $json;\nreturn [{\n  json: {\n    ...original,\n    response_text: \"I don't have information on that topic yet \u2014 let me connect you with someone who can help.\",\n    confidence_score: 0,\n    retrieval_score: original.retrieval_score || 0\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4224,
+        1680
+      ],
+      "id": "a0276079-63b3-46ea-bdce-145bc0ba3c8c",
+      "name": "[RAG] - Handle No Knowledge Found"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7fc28c57-0c6d-4a53-80c7-d05fcd4dffed",
+              "leftValue": "={{ $json.body }}",
+              "rightValue": "pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        128,
+        160
+      ],
+      "id": "e230ee34-e5bb-4ad1-acba-6e2f4f7f55b5",
+      "name": "[INGEST] - Route File Type",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "={{$json.file_url}}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        352,
+        64
+      ],
+      "id": "d22fd4f9-c79d-4499-9020-a25de3a15e91",
+      "name": "[INGEST] - Download PDF",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        576,
+        64
+      ],
+      "id": "991e7e66-d379-468d-a407-f0c81f354fdb",
+      "name": "[INGEST] - Extract PDF Text"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { ...$json, extracted_text: $json.file_content } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        256
+      ],
+      "id": "2909029c-96ea-4f98-b313-b25faace9236",
+      "name": "[INGEST] - Extract Markdown Text",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $json;\n   const metadata = {\n     doc_id: item.doc_id,\n     tenant_id: item.tenant_id,\n     industry_pack: item.industry_pack,\n     title: item.title,\n     category: item.category,\n     version: item.version,\n     last_updated: item.last_updated || new Date().toISOString().slice(0,10)\n   };\n   return [{ json: { ...metadata, extracted_text: item.extracted_text || item.text } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        160
+      ],
+      "id": "fb59fbf7-98f6-4bd9-99c2-61f8723b1c7d",
+      "name": "[INGEST] - Normalize Document"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "ingestion_log",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "doc_id",
+              "condition": "eq",
+              "keyValue": "={{$json.doc_id}}"
+            },
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "={{$json.tenant_id}}"
+            },
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "success"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        160
+      ],
+      "id": "fcf82747-ee76-439d-81e8-52148c71359b",
+      "name": "[INGEST] - Check Previous Ingestion",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "AWapg2iswUxnGF2X",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const original =\n  $('[INGEST] - Normalize Document').item.json;\n\nconst results = $input.all();\n\nconst previousIngestionExists = results.some(item => {\n  const row = item.json || {};\n\n  return (\n    row.doc_id === original.doc_id &&\n    row.tenant_id === original.tenant_id &&\n    row.status === 'success'\n  );\n});\n\nreturn [{\n  json: {\n    ...original,\n    previous_ingestion_exists: previousIngestionExists\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        160
+      ],
+      "id": "70d1c569-f183-4d06-9d0d-19642d38171e",
+      "name": "[INGEST] - Evaluate Previous Ingestion"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a50708ed-3e67-4511-96b7-4d9c2da74852",
+              "leftValue": "={{ $json.previous_ingestion_exists }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1472,
+        160
+      ],
+      "id": "a84db97a-18bf-4c29-9efb-9e48ac4b33e9",
+      "name": "[INGEST] - Existing Document?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "<YOUR_PINECONE_INDEX_URL>/vectors/delete",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Pinecone-Api-Version",
+              "value": "2025-10"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"namespace\": \"{{$json.tenant_id}}\",\n  \"filter\": {\n    \"doc_id\": {\n      \"$eq\": \"{{$json.doc_id}}\"\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1696,
+        96
+      ],
+      "id": "f6befd35-06c5-4e27-ba6e-2feba4fd1fe9",
+      "name": "[INGEST] - Delete Existing Vectors",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "zOiU6wy4rQq13ygc",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const original = $('[INGEST] - Normalize Document').item.json;\n\nreturn [\n  {\n    json: {\n      ...original,\n      delete_completed: true\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        96
+      ],
+      "id": "1dc3cd9c-ac95-4a90-bfc5-ab26160024f9",
+      "name": "[INGEST] - Restore Document Context"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "718f536d-9f47-48d8-af70-d5741cf52dc3",
+              "leftValue": "={{ $json.extracted_text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2144,
+        160
+      ],
+      "id": "60822cfd-7cae-420f-9eac-952a89455894",
+      "name": "[INGEST] - Validate Extracted Text"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Header-aware chunking per chunking-strategy.md\n// 1. Split on ## / ### headings\n// 2. If section > 500 tokens (~2000 chars), sub-split into ~400-token chunks with 50-token overlap\n// 3. Never split mid-sentence\n// 4. Prepend title + section_heading to embedded text for better retrieval\n\nconst doc = $json;\nconst text = doc.extracted_text || '';\nconst headingRegex = /^(#{2,3})\\s+(.*)$/gm;\n\nlet sections = [];\nlet lastIndex = 0;\nlet lastHeading = doc.title;\nlet match;\nconst matches = [...text.matchAll(headingRegex)];\n\nif (matches.length === 0) {\n  sections.push({ heading: doc.title, body: text });\n} else {\n  matches.forEach((m, i) => {\n    const start = m.index;\n    if (i === 0 && start > 0) {\n      sections.push({ heading: doc.title, body: text.slice(0, start).trim() });\n    }\n    const end = i + 1 < matches.length ? matches[i + 1].index : text.length;\n    sections.push({ heading: m[2].trim(), body: text.slice(start, end).replace(headingRegex, '').trim() });\n  });\n}\n\nconst CHARS_PER_CHUNK = 1600; // ~400 tokens\nconst OVERLAP_CHARS = 200;    // ~50 tokens\n\nfunction splitBySentence(body, maxChars, overlap) {\n  const sentences = body.match(/[^.!?]+[.!?]+(\\s|$)/g) || [body];\n  const chunks = [];\n  let current = '';\n  for (const s of sentences) {\n    if ((current + s).length > maxChars && current.length > 0) {\n      chunks.push(current.trim());\n      const overlapText = current.slice(-overlap);\n      current = overlapText + s;\n    } else {\n      current += s;\n    }\n  }\n  if (current.trim()) chunks.push(current.trim());\n  return chunks;\n}\n\nconst chunks = [];\nlet chunkIndex = 0;\nfor (const section of sections) {\n  if (!section.body) continue;\n  const bodyChunks = section.body.length <= 2000\n    ? [section.body]\n    : splitBySentence(section.body, CHARS_PER_CHUNK, OVERLAP_CHARS);\n\n  for (const body of bodyChunks) {\n    chunkIndex += 1;\n    chunks.push({\n      chunk_id: `${doc.doc_id}-c${chunkIndex}`,\n      doc_id: doc.doc_id,\n      tenant_id: doc.tenant_id,\n      industry_pack: doc.industry_pack,\n      title: doc.title,\n      section_heading: section.heading,\n      category: doc.category,\n      version: doc.version,\n      last_updated: doc.last_updated,\n      chunk_index: chunkIndex,\n      embed_text: `${doc.title} \u2014 ${section.heading}\\n${body}`,\n      text: body\n    });\n  }\n}\n\nreturn chunks.map(c => ({ json: c }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2368,
+        64
+      ],
+      "id": "591f7eaa-8708-4389-9e8e-9fdf27093e19",
+      "name": "[INGEST] - Chunk Document"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8c11c3d6-8674-4fcf-8926-28e57535b632",
+              "leftValue": "={{$input.all().length}}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2592,
+        64
+      ],
+      "id": "6a44eed3-647e-44b5-9f2d-1358690eed41",
+      "name": "[INGEST] - Validate Chunks"
+    },
+    {
+      "parameters": {
+        "jsCode": "const source =\n  $('[INGEST] - Normalize Document').item.json || {};\n\nreturn [{\n  json: {\n    doc_id: source.doc_id || '',\n    tenant_id: source.tenant_id || '',\n    title: source.title || '',\n\n    status: 'failed',\n\n    error_message:\n      'No chunks were generated from the document.',\n\n    failed_node:\n      'Validate Chunks',\n\n    occurred_at:\n      new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3312,
+        240
+      ],
+      "id": "a2590d8e-23af-4727-a4ca-0c387719ad44",
+      "name": "[INGEST] - Prepare Chunk Validation Error"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2832,
+        128
+      ],
+      "id": "a965b4f8-ac63-4d30-9aa5-2d6971a7c9aa",
+      "name": "[INGEST] - Gemini Embeddings",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "b86t9ijdbERxzXBC",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "doc_id",
+                "value": "={{$json.doc_id}}"
+              },
+              {
+                "name": "chunk_id",
+                "value": "={{$json.chunk_id}}"
+              },
+              {
+                "name": "tenant_id",
+                "value": "={{$json.tenant_id}}"
+              },
+              {
+                "name": "title",
+                "value": "={{$json.title}}"
+              },
+              {
+                "name": "section_heading",
+                "value": "={{$json.section_heading}}"
+              },
+              {
+                "name": "category",
+                "value": "={{$json.category}}"
+              },
+              {
+                "name": "industry_pack",
+                "value": "={{$json.industry_pack}}"
+              },
+              {
+                "name": "version",
+                "value": "={{$json.version}}"
+              },
+              {
+                "name": "last_updated",
+                "value": "={{$json.last_updated}}"
+              },
+              {
+                "name": "chunk_index",
+                "value": "={{$json.chunk_index}}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        2960,
+        128
+      ],
+      "id": "41fd73c5-d3e1-4049-af72-e05b5ce3a1f6",
+      "name": "[INGEST] - Build Pinecone Documents",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "chunkSize": 4000
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        3040,
+        336
+      ],
+      "id": "587fc2c7-78d0-4aa6-9a28-4c69fcd47779",
+      "name": "[INGEST] - Document Text Splitter"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "customer-support-kb",
+          "mode": "list",
+          "cachedResultName": "customer-support-kb"
+        },
+        "embeddingBatchSize": 10,
+        "options": {
+          "pineconeNamespace": "={{$json.tenant_id}}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        2848,
+        -112
+      ],
+      "id": "d51ae3a2-1559-45d1-98d9-bfe100162ad7",
+      "name": "[INGEST] - Index Knowledge",
+      "credentials": {
+        "pineconeApi": {
+          "id": "2qW3vCi7Fwg8tSHC",
+          "name": "Pinecone account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const chunkItems = $('[INGEST] - Chunk Document').all();\nconst first = chunkItems[0]?.json || {};\nreturn [{\n  json: {\n    doc_id: first.doc_id,\n    tenant_id: first.tenant_id,\n    title: first.title,\n    chunk_count: chunkItems.length,\n    embedding_model: 'models/gemini-embedding-001',\n    ingested_at: new Date().toISOString(),\n    status: 'success'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3312,
+        -112
+      ],
+      "id": "29e13283-456b-43c1-8d2e-4d071799353b",
+      "name": "[INGEST] - Build Ingestion Result"
+    },
+    {
+      "parameters": {
+        "tableId": "ingestion_log",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "doc_id",
+              "fieldValue": "={{ $json.doc_id }}"
+            },
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "={{ $json.tenant_id }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $json.title }}"
+            },
+            {
+              "fieldId": "chunk_count",
+              "fieldValue": "={{ $json.chunk_count }}"
+            },
+            {
+              "fieldId": "embedding_model",
+              "fieldValue": "={{ $json.embedding_model }}"
+            },
+            {
+              "fieldId": "ingested_at",
+              "fieldValue": "={{ $json.ingested_at }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $json.error_message }}"
+            },
+            {
+              "fieldId": "failed_node",
+              "fieldValue": "={{ $json.failed_node }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3536,
+        240
+      ],
+      "id": "eca33475-a9d7-4778-8195-c3f20edaf27a",
+      "name": "[INGEST] - Log Ingestion Run",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AWapg2iswUxnGF2X",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "=={{\n  {\n    status: 'ok',\n    doc_id: $('[INGEST] - Build Ingestion Result').item.json.doc_id,\n    chunks_indexed: $('[INGEST] - Build Ingestion Result').item.json.chunk_count\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        3760,
+        240
+      ],
+      "id": "0659ea8d-779d-4784-ab70-1520aa9f6e6e",
+      "name": "[INGEST] - Respond"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        656
+      ],
+      "id": "27af2abe-27aa-42be-932c-d5a71812666f",
+      "name": "[ERROR] - Workflow Error Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const error = $json;\n\nconst execution = error.execution || {};\nconst workflow = error.workflow || {};\n\nreturn [{\n  json: {\n    status: 'failed',\n\n    workflow_name: workflow.name || 'Unknown workflow',\n\n    execution_id: execution.id || '',\n\n    failed_node:\n      execution.lastNodeExecuted ||\n      'Unknown node',\n\n    error_message:\n      execution.error?.message ||\n      error.error?.message ||\n      'Unknown error',\n\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        656
+      ],
+      "id": "08813a39-9158-439e-9e59-2d4ed61ef806",
+      "name": "[ERROR] - Normalize Workflow Error"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nreturn {\n  json: {\n    ...data,\n\n    stage: data.failed_node || 'unknown',\n\n    severity: 'error',\n\n    error_type: 'workflow_failure'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        656
+      ],
+      "id": "f0b14d08-60a9-4ddc-a880-599bd6ba4294",
+      "name": "[ERROR] - Prepare Workflow Error Log"
+    },
+    {
+      "parameters": {
+        "tableId": "ingestion_log",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $json.error_message }}"
+            },
+            {
+              "fieldId": "failed_node",
+              "fieldValue": "={{ $json.failed_node }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $json.error_message }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "ingested_at",
+              "fieldValue": "={{ $json.timestamp }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        352,
+        656
+      ],
+      "id": "4f6e53ab-d1c5-424e-abef-1b673033e387",
+      "name": "[ERROR] - Save Workflow Error",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AWapg2iswUxnGF2X",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4b64667c-fd1a-4301-a49b-7ff0409f1856",
+              "leftValue": "={{ $json.decision }}",
+              "rightValue": "escalate",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        6016,
+        1392
+      ],
+      "id": "f0a21ba9-87b7-477c-969c-8e9c5bdaf0bd",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const decision = $json;\n\nlet conversation = [];\nlet customer = {};\n\ntry {\n  conversation = $('[CHAT] - Build Conversation Context').item.json.conversation_history\n    || '';\n} catch (e) {}\n\ntry {\n  customer = $('[CHAT] - Build Conversation Context').item.json.customer_context\n    || {};\n} catch (e) {}\n\nreturn [{\n  json: {\n    ...decision,\n\n    escalation_context: {\n      customer_message: (() => {\n        try {\n          return $('[CHAT] - Build Conversation Context').item.json.text || '';\n        } catch (e) {\n          return '';\n        }\n      })(),\n\n      conversation_history: conversation,\n\n      customer_context: customer,\n\n      intent: decision.intent,\n      risk_flags: decision.risk_flags,\n      decision_reason: decision.decision_reason,\n      escalation_reasons: decision.escalation_reasons,\n\n      response_text: decision.response_text\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6240,
+        1280
+      ],
+      "id": "3fef5343-d974-43a8-947d-2b4d5eafcd59",
+      "name": "[ESCALATION] - Build Case Context"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $json.escalation_context;\n\nconst prompt = `\nYou are the escalation-intake assistant for a customer support platform.\n\nYour job is NOT to decide whether this case should be escalated.\nThat decision has already been made by deterministic guardrail logic.\n\nYour job is to determine:\n1. What information the human support agent will need.\n2. What information the customer has already provided.\n3. What information is still missing.\n4. Whether enough information has been collected to create a useful human handoff.\n5. What safe next action should happen.\n\nCustomer message:\n${ctx.customer_message || '(none)'}\n\nConversation history:\n${ctx.conversation_history || '(none)'}\n\nCustomer account context:\n${JSON.stringify(ctx.customer_context || {})}\n\nIntent:\n${ctx.intent}\n\nRisk flags:\n${JSON.stringify(ctx.risk_flags || [])}\n\nEscalation reason:\n${ctx.decision_reason}\n\nEscalation reasons:\n${JSON.stringify(ctx.escalation_reasons || [])}\n\nBase your analysis entirely on the customer's actual message below. Do not reuse or reference any example values from elsewhere.\n\nRules:\n\n- Do not ask for information already provided.\n- Ask only for information that is genuinely useful for resolving the case.\n- Never request passwords, one-time authentication codes, CVVs, full payment-card numbers, or other authentication secrets.\n- Screenshots may be requested when they help prove an issue, but tell the customer to hide sensitive financial or authentication information.\n- For billing disputes, useful evidence can include the account email, approximate transaction date, amount, invoice/receipt, and a screenshot of the disputed charge when appropriate.\n- For security incidents, prioritize safe account-verification and incident details rather than asking for credentials.\n- Keep required information minimal. Do not overwhelm the customer with a long checklist.\n- \"case_ready\" should be true only when the available information is sufficient for a human agent to start investigating meaningfully.\n- \"handoff_mode\" should be \"ticket\" when the issue can be collected asynchronously and \"live_chat\" when continued conversation with a human is more appropriate.\n`;\n\nreturn [{\n  json: {\n    ...$json,\n    escalation_prompt: prompt\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6464,
+        1280
+      ],
+      "id": "6ff66933-e25c-49e5-a7db-a4c66a82bc8d",
+      "name": "[ESCALATION] - Build Requirements Prompt"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.escalation_prompt}}",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        6688,
+        1280
+      ],
+      "id": "4e24b945-25ea-427b-9834-f76b3b55432e",
+      "name": "[ESCALATION] - Analyze Case Requirements",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"escalation_type\": \"account_access\",\n  \"handoff_mode\": \"live_chat\",\n  \"case_ready\": true,\n  \"required_information\": [\"username\", \"last_login_date\"],\n  \"provided_information\": [\"username\", \"device_used\"],\n  \"missing_information\": [\"last_login_date\"],\n  \"customer_action_required\": false,\n  \"next_action\": \"prepare_case_for_human_agent\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        6832,
+        1504
+      ],
+      "id": "7bd23a81-fbeb-4043-a9d6-026fab98024f",
+      "name": "[ESCALATION] - Parse Requirements"
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $json.output || {};\nconst original = $('[ESCALATION] - Build Case Context').item.json;\n\nreturn [{\n  json: {\n    ...original,\n\n    escalation_analysis: {\n      escalation_type: result.escalation_type || original.intent || 'general',\n      handoff_mode: result.handoff_mode || 'ticket',\n      case_ready: result.case_ready ?? false,\n      required_information: Array.isArray(result.required_information)\n        ? result.required_information\n        : [],\n      provided_information: Array.isArray(result.provided_information)\n        ? result.provided_information\n        : [],\n      missing_information: Array.isArray(result.missing_information)\n        ? result.missing_information\n        : [],\n      customer_action_required: result.customer_action_required ?? false,\n      next_action: result.next_action || 'ask_customer_for_missing_information'\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7040,
+        1280
+      ],
+      "id": "93a5361a-67ad-4d37-8481-fdf6cd79eb14",
+      "name": "[ESCALATION] - Extract Requirements"
+    },
+    {
+      "parameters": {
+        "jsCode": "const original =\n  $('[ESCALATION] - Extract Requirements').item.json || {};\n\nconst ctx = $json || {};\n\nconst analysis =\n  original.escalation_analysis ||\n  ctx.escalation_analysis ||\n  {};\n\nconst escalationContext =\n  original.escalation_context ||\n  ctx.escalation_context ||\n  {};\n\nconst customerMessage =\n  escalationContext.customer_message ||\n  original.text ||\n  ctx.text ||\n  '';\n\nconst intent =\n  original.intent ||\n  ctx.intent ||\n  'general';\n\nconst riskFlags =\n  Array.isArray(original.risk_flags)\n    ? original.risk_flags\n    : Array.isArray(ctx.risk_flags)\n      ? ctx.risk_flags\n      : [];\n\nconst escalationType =\n  analysis.escalation_type ||\n  intent ||\n  'general';\n\nconst handoffMode =\n  analysis.handoff_mode ||\n  'ticket';\n\nconst missing =\n  Array.isArray(analysis.missing_information)\n    ? analysis.missing_information\n    : [];\n\nconst provided =\n  Array.isArray(analysis.provided_information)\n    ? analysis.provided_information\n    : [];\n\nconst required =\n  Array.isArray(analysis.required_information)\n    ? analysis.required_information\n    : [];\n\nconst caseReady =\n  analysis.case_ready === true;\n\nconst prompt = `\nYou are an intelligent, empathetic customer support escalation assistant.\n\nThe customer has already explained their problem. Your job is NOT to ask them to explain the problem again.\n\nYou must write a natural, specific customer-facing response based on the customer's ACTUAL complaint and the escalation information below.\n\n====================\nCUSTOMER COMPLAINT\n====================\n\n${customerMessage}\n\n====================\nCASE INFORMATION\n====================\n\nIntent:\n${intent}\n\nEscalation type:\n${escalationType}\n\nRisk flags:\n${JSON.stringify(riskFlags)}\n\nInformation already provided:\n${JSON.stringify(provided)}\n\nRequired information:\n${JSON.stringify(required)}\n\nInformation still missing:\n${JSON.stringify(missing)}\n\nCase ready for human handoff:\n${caseReady}\n\nHandoff mode:\n${handoffMode}\n\n====================\nYOUR JOB\n====================\n\nWrite the response that should be sent to this specific customer.\n\nThe customer's actual complaint MUST be reflected in the response.\n\nFor example, if the customer says:\n\n\"I was charged twice for my subscription and I want the second charge refunded.\"\n\nDo NOT respond with:\n\n\"I'm sorry you're having trouble. Please describe the issue.\"\n\nInstead, acknowledge the specific issue:\n\n\"I'm sorry you were charged twice for your subscription. I understand why you'd want the duplicate charge refunded.\"\n\nThen explain what is happening with their support case and collect only the information that is still genuinely needed.\n\n====================\nRESPONSE RULES\n====================\n\n1. Start with natural empathy that refers to the customer's ACTUAL problem.\n\n2. Never use vague openings such as:\n   - \"I'm sorry you're having trouble.\"\n   - \"I'm sorry to hear you're experiencing an issue.\"\n   - \"I understand you're having some trouble.\"\n   - \"Please describe the issue you're experiencing.\"\n\n   These are prohibited when the customer's actual problem is already known.\n\n3. Never ask the customer to repeat or describe a problem that is already present in CUSTOMER COMPLAINT.\n\n4. Explicitly acknowledge the relevant issue when appropriate.\n\n   Examples:\n   - Duplicate charge \u2192 acknowledge that they were charged twice.\n   - Account access \u2192 acknowledge that they cannot access their account.\n   - Incorrect invoice \u2192 acknowledge the incorrect charge/invoice.\n   - Suspicious activity \u2192 acknowledge the reported suspicious activity.\n   - Refund dispute \u2192 acknowledge that they are requesting a refund.\n\n5. Explain that the issue has been logged as a support case when the case has been created.\n\n6. Ask ONLY for information that is still missing and useful to the human support team.\n\n7. Do not ask for information that the customer has already provided.\n\n8. Do not blindly request every item in required_information. Use missing_information to determine what is actually needed.\n\n9. Never request:\n   - passwords\n   - CVVs\n   - full card numbers\n   - authentication codes\n   - API keys\n   - security answers\n   - other secrets or credentials\n\n10. If a screenshot would genuinely help, request a REDACTED screenshot and tell the customer to hide sensitive payment or authentication information.\n\n11. Never promise that a refund, credit, account change, or other outcome will be approved unless the supplied context explicitly confirms it.\n\n12. Never invent transaction details, account details, policies, deadlines, or outcomes.\n\n13. If case_ready is FALSE:\n   - Tell the customer what information is still needed.\n   - Explain briefly that providing it will help the support team investigate the case.\n   - Do not say that a human agent has already reviewed the case.\n\n14. If case_ready is TRUE and handoff_mode is \"ticket\":\n   - Tell the customer that their case has been logged.\n   - Tell them it will be reviewed by a human support agent.\n   - Do not claim that the agent has already reviewed it.\n\n15. If case_ready is TRUE and handoff_mode is \"live_chat\":\n   - Tell the customer they will be connected with a human support agent.\n\n16. Be conversational and human.\n\n17. Do not over-apologize.\n\n18. Do not use corporate filler such as:\n   - \"We value your patience.\"\n   - \"Rest assured.\"\n   - \"Your satisfaction is our priority.\"\n   - \"We sincerely apologize for any inconvenience.\"\n\n19. Do not expose internal terms such as:\n   - risk flags\n   - escalation analysis\n   - confidence score\n   - retrieval score\n   - escalation type\n   - handoff mode\n   - case_ready\n\n20. Keep the response concise but sufficiently detailed to move the case forward.\n\n21. Write ONLY the customer-facing response. Do not include analysis, headings, JSON, or explanations.\n\nFor duplicate-charge cases, if transaction details are requested, explicitly ask for the date AND amount of EACH disputed charge.\n\nDo not use singular wording such as \"the transaction date and amount\" when multiple transactions are involved.\n\nInvoice numbers, receipts, and screenshots should be presented as optional supporting evidence unless the escalation analysis explicitly identifies them as necessary to begin investigation.\n\n====================\nIMPORTANT\n====================\n\nThe customer complaint is the primary source of truth for what the response should address.\n\nDo not replace the customer's specific problem with a generic \"issue\" or \"trouble.\"\n\nIf information is missing, ask for that information while continuing to acknowledge the specific complaint.\n\n`;\n\nreturn [{\n  json: {\n    ...ctx,\n\n    escalation_context: {\n      ...escalationContext,\n      customer_message: customerMessage\n    },\n\n    customer_response_prompt: prompt\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7488,
+        1280
+      ],
+      "id": "68408a4e-5153-4ee2-9b30-14ba04948c83",
+      "name": "[ESCALATION] - Build Customer Response Prompt"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.customer_response_prompt}}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        7712,
+        1280
+      ],
+      "id": "5ac3e237-b467-4e91-bef2-e1ca96f9e2a9",
+      "name": "[ESCALATION] - Generate Customer Response",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const generatedText = ($json.text || '').trim();\n\nconst original =\n  $('[ESCALATION] - Extract Requirements').item.json;\n\nconst savedCase =\n  $('[ESCALATION] - Save Case').item.json || {};\n\nconst analysis =\n  original.escalation_analysis || {};\n\nconst escalationContext =\n  original.escalation_context || {};\n\nreturn [{\n  json: {\n    ...original,\n\n    case_id:\n      savedCase.case_id ||\n      null,\n\n    original_response_text:\n      original.response_text || '',\n\n    response_text:\n      generatedText,\n\n    customer_response:\n      generatedText,\n\n    escalation_state:\n      analysis.case_ready === true\n        ? 'READY_FOR_AGENT'\n        : 'AWAITING_CUSTOMER_INFO',\n\n    escalation_context: {\n      ...escalationContext,\n\n      customer_message:\n        escalationContext.customer_message ||\n        original.text ||\n        '',\n\n      intent:\n        escalationContext.intent ||\n        original.intent ||\n        '',\n\n      risk_flags:\n        escalationContext.risk_flags ||\n        original.risk_flags ||\n        [],\n\n      escalation_analysis:\n        analysis\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8064,
+        1280
+      ],
+      "id": "40cba501-448f-42c1-b73d-85081d8102f5",
+      "name": "[ESCALATION] - Prepare Customer Response"
+    },
+    {
+      "parameters": {
+        "tableId": "escalation_cases",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "={{ $json.tenant_id }}"
+            },
+            {
+              "fieldId": "conversation_id",
+              "fieldValue": "={{ $json.conversation_id }}"
+            },
+            {
+              "fieldId": "customer_id",
+              "fieldValue": "={{ $('[CHAT] - Unwrap Request').item.json.customer_id }}"
+            },
+            {
+              "fieldId": "escalation_type",
+              "fieldValue": "={{$json.escalation_analysis.escalation_type}}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{$json.escalation_analysis.case_ready ? 'ready_for_agent' : 'awaiting_customer_info'}}"
+            },
+            {
+              "fieldId": "handoff_mode",
+              "fieldValue": "={{$json.escalation_analysis.handoff_mode}}"
+            },
+            {
+              "fieldId": "required_information",
+              "fieldValue": "={{ JSON.stringify($json.escalation_analysis.required_information) }}"
+            },
+            {
+              "fieldId": "provided_information",
+              "fieldValue": "={{ JSON.stringify($json.escalation_analysis.provided_information) }}"
+            },
+            {
+              "fieldId": "missing_information",
+              "fieldValue": "={{ JSON.stringify($json.escalation_analysis.missing_information) }}"
+            },
+            {
+              "fieldId": "latest_customer_message",
+              "fieldValue": "={{$json.escalation_context.customer_message}}"
+            },
+            {
+              "fieldId": "case_context",
+              "fieldValue": "={{ JSON.stringify({   intent: $json.intent,   risk_flags: $json.risk_flags,   decision_reason: $json.decision_reason,   escalation_reasons: $json.escalation_reasons }) }}"
+            },
+            {
+              "fieldId": "intake_attempts",
+              "fieldValue": "1"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        7264,
+        1280
+      ],
+      "id": "767c0350-1ad4-4af5-a505-0e414a50c526",
+      "name": "[ESCALATION] - Save Case",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AWapg2iswUxnGF2X",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "escalation_cases",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "tenant_id",
+              "condition": "eq",
+              "keyValue": "={{$json.tenant_id}}"
+            },
+            {
+              "keyName": "conversation_id",
+              "condition": "eq",
+              "keyValue": "={{$json.conversation_id}}"
+            },
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "awaiting_customer_info"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        1200
+      ],
+      "id": "26ff1661-fa2b-44b4-b683-88272e924c77",
+      "name": "[ESCALATION] - Check Active Case",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "AWapg2iswUxnGF2X",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const original = $('[CHAT] - Build Conversation Context').item.json;\nconst results = $input.all();\n\nconst activeCase = results.find(\n  item => item.json && item.json.case_id\n);\n\nreturn [{\n  json: {\n    ...original,\n\n    active_escalation_exists: !!activeCase,\n\n    active_escalation_case: activeCase\n      ? activeCase.json\n      : null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1472,
+        1200
+      ],
+      "id": "52e6ea86-259c-4991-8589-abd179781418",
+      "name": "[ESCALATION] - Evaluate Active Case"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b75dd6b7-27ec-4636-a281-dde27146c626",
+              "leftValue": "={{ $json.active_escalation_exists }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1696,
+        1200
+      ],
+      "id": "1b055981-cc36-4610-8aa9-35dda2efdfcd",
+      "name": "[ESCALATION] - Active Case?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const caseData = $json.active_escalation_case || {};\n\nreturn [{\n  json: {\n    ...$json,\n\n    intake_context: {\n      customer_message:\n        $json.text || '',\n\n      current_case_id:\n        caseData.case_id || '',\n\n      escalation_type:\n        caseData.escalation_type || 'general',\n\n      handoff_mode:\n        caseData.handoff_mode || 'ticket',\n\n      required_information:\n        Array.isArray(caseData.required_information)\n          ? caseData.required_information\n          : [],\n\n      provided_information:\n        Array.isArray(caseData.provided_information)\n          ? caseData.provided_information\n          : [],\n\n      missing_information:\n        Array.isArray(caseData.missing_information)\n          ? caseData.missing_information\n          : [],\n\n      intake_attempts:\n        Number(caseData.intake_attempts || 0) + 1\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        992
+      ],
+      "id": "df6dd559-c3f2-4bdf-a8e9-eb9bef2404bb",
+      "name": "[ESCALATION] - Build Intake Context"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $json.intake_context || {};\nconst activeCase = $json.active_escalation_case || {};\n\nconst originalCustomerMessage =\n  activeCase.original_customer_message ||\n  $json.escalation_context?.customer_message ||\n  $json.original_customer_message ||\n  '';\n\nconst conversationHistory =\n  $json.conversation_history || '';\n\nconst currentCustomerMessage =\n  ctx.customer_message ||\n  $json.text ||\n  '';\n\nconst requiredInformation =\n  Array.isArray(ctx.required_information)\n    ? ctx.required_information\n    : [];\n\nconst previouslyProvided =\n  Array.isArray(ctx.provided_information)\n    ? ctx.provided_information\n    : [];\n\nconst previouslyMissing =\n  Array.isArray(ctx.missing_information)\n    ? ctx.missing_information\n    : [];\n\nconst prompt = `\nYou are an escalation-intake analyst for a customer support system.\n\nA support case already exists and is currently waiting for customer information.\n\nYour job is to analyze the customer's NEW message and determine what information is now available for the existing support case.\n\nIMPORTANT:\nYou must evaluate the NEW message together with the ORIGINAL CUSTOMER COMPLAINT, EXISTING CASE INFORMATION, PREVIOUSLY PROVIDED INFORMATION, and CONVERSATION HISTORY.\n\nDo NOT treat the latest customer message as the only source of information.\n\nDo NOT decide whether the original case should be escalated.\nThat decision has already been made.\n\n========================\nEXISTING ESCALATION CASE\n========================\n\nCase ID:\n${ctx.current_case_id || activeCase.case_id || ''}\n\nEscalation type:\n${ctx.escalation_type || activeCase.escalation_type || ''}\n\nHandoff mode:\n${ctx.handoff_mode || activeCase.handoff_mode || 'ticket'}\n\n========================\nORIGINAL CUSTOMER COMPLAINT\n========================\n\n${originalCustomerMessage}\n\nIMPORTANT:\nInformation contained in the original customer complaint counts as information already provided by the customer.\n\n========================\nCONVERSATION HISTORY\n========================\n\n${conversationHistory}\n\nUse conversation history as supporting context.\n\nIf the customer previously explained the reason for the complaint, do NOT mark that reason as missing again.\n\nIgnore previous assistant mistakes or generic requests when determining what information the customer has actually provided.\n\n========================\nREQUIRED INFORMATION\n========================\n\n${JSON.stringify(requiredInformation)}\n\n========================\nPREVIOUSLY PROVIDED\n========================\n\n${JSON.stringify(previouslyProvided)}\n\n========================\nPREVIOUSLY MISSING\n========================\n\n${JSON.stringify(previouslyMissing)}\n\n========================\nCUSTOMER'S NEW MESSAGE\n========================\n\n${currentCustomerMessage}\n\n========================\nANALYSIS INSTRUCTIONS\n========================\n\nDetermine the complete information currently available for the case.\n\nYou MUST combine:\n\n1. Information from the original customer complaint.\n2. Information from previous customer messages in the conversation.\n3. Information already recorded as previously provided.\n4. Information from the customer's new message.\n\nDo NOT reset the case and analyze only the latest message.\n\n========================\nIMPORTANT RULES\n========================\n\n1. If information was already provided earlier in the conversation, it remains provided.\n\n2. If the original customer complaint clearly explains the reason for the dispute, that reason counts as provided.\n\nExample:\n\nOriginal complaint:\n\"I was charged twice for my subscription and I want the second charge refunded.\"\n\nThis provides:\n- nature of the issue: duplicate subscription charge\n- reason for dispute: duplicate/erroneous charge\n- requested outcome: refund of the second charge\n\nDo NOT mark \"reason for dispute\" as missing later.\n\n3. Recognize natural-language equivalents.\n\nExamples:\n\n\"My email is john@example.com\"\n\u2192 account email provided\n\n\"I was charged $49 on August 12 and another $49 on August 13\"\n\u2192 transaction amounts and transaction dates provided\n\n\"I want the second charge refunded\"\n\u2192 requested refund / dispute reason provided\n\n4. Do not require the customer to repeat information they already supplied.\n\n5. Do not mark optional evidence as required merely because it appears in the original case requirements.\n\n6. Distinguish between:\n   - information necessary for meaningful human investigation\n   - optional supporting evidence\n\n7. A screenshot is NOT automatically required unless the case explicitly requires it and meaningful investigation cannot begin without it.\n\n8. A promise to provide information does NOT count as information received.\n\nExample:\n\"I can send you a screenshot later.\"\n\u2192 screenshot NOT provided\n\n9. Do not infer precise values that the customer did not provide.\n\n10. Never request or treat the following as acceptable case information:\n   - passwords\n   - CVVs\n   - full card numbers\n   - authentication codes\n   - API keys\n   - security answers\n   - other secrets or credentials\n\n11. If the customer provides enough information for a human agent to begin meaningful investigation, set:\n\n\"case_ready\": true\n\n12. A case does NOT need every optional piece of evidence before being ready.\n\n13. If case_ready is true:\n   - still_missing_information should contain ONLY genuinely useful information that is necessary for further investigation.\n   - Do not block handoff because of optional information.\n\n14. If case_ready is false:\n   - identify only the most useful missing information needed before a human can meaningfully investigate.\n   - Do not list every possible piece of evidence.\n\n15. Do not invent information.\n\n========================\nBILLING DUPLICATE-CHARGE EXAMPLE\n========================\n\nIf the customer originally said:\n\n\"I was charged twice for my subscription and I want the second charge refunded.\"\n\nand later says:\n\n\"My account email is gaius@example.com. The two charges were $49 on August 12 and $49 on August 13.\"\n\nThen the correct analysis should recognize:\n\nProvided:\n- duplicate subscription charge\n- refund request\n- account email\n- transaction amounts\n- transaction dates\n\nThe case should normally be considered ready for human investigation.\n\nDo NOT return:\n\n\"reason for the dispute\" as missing.\n\nDo NOT ask the customer to explain why they are disputing the charge again.\n\n========================\nOUTPUT\n========================\n\nReturn ONLY valid JSON.\n\nUse this exact structure:\n\n{\n  \"provided_information\": [],\n  \"still_missing_information\": [],\n  \"case_ready\": true,\n  \"customer_action_required\": false,\n  \"next_action\": \"\",\n  \"evidence_received\": []\n}\n\nNo markdown.\nNo explanation.\nNo additional fields.\n`;\n\nreturn [{\n  json: {\n    ...$json,\n    update_analysis_prompt: prompt\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2208,
+        992
+      ],
+      "id": "0482cde6-3db0-45ab-ab59-d4cdb2deb235",
+      "name": "[ESCALATION] - Build Update Analysis Prompt"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.update_analysis_prompt}}",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2496,
+        992
+      ],
+      "id": "5594330d-bfec-4044-aa95-dbbef56366bf",
+      "name": "[ESCALATION] - Analyze Customer Update"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"provided_information\": [\n    \"account email\",\n    \"transaction dates\",\n    \"transaction amounts\"\n  ],\n  \"still_missing_information\": [\n    \"invoice or receipt numbers\"\n  ],\n  \"case_ready\": true,\n  \"customer_action_required\": false,\n  \"next_action\": \"prepare_case_for_human_agent\",\n  \"evidence_received\": [\n    \"customer provided the account email\",\n    \"customer provided two transaction dates and amounts\"\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2640,
+        1216
+      ],
+      "id": "f1aaa43d-c016-42f6-baa5-986ab05cea9b",
+      "name": "[ESCALATION] - Parse Update Analysis"
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $json.output || {};\n\nconst original =\n  $('[ESCALATION] - Build Intake Context').item.json;\n\nconst previous =\n  original.intake_context || {};\n\nconst previousMissing =\n  Array.isArray(previous.missing_information)\n    ? previous.missing_information\n    : [];\n\nconst provided =\n  Array.isArray(result.provided_information)\n    ? result.provided_information\n    : [];\n\nconst stillMissing =\n  Array.isArray(result.still_missing_information)\n    ? result.still_missing_information\n    : previousMissing;\n\nconst evidence =\n  Array.isArray(result.evidence_received)\n    ? result.evidence_received\n    : [];\n\nreturn [{\n  json: {\n    ...original,\n\n    update_analysis: {\n      provided_information: provided,\n\n      still_missing_information: stillMissing,\n\n      case_ready:\n        result.case_ready === true,\n\n      customer_action_required:\n        result.customer_action_required ?? !(\n          result.case_ready === true\n        ),\n\n      next_action:\n        result.next_action ||\n        (\n          result.case_ready === true\n            ? 'prepare_case_for_human_agent'\n            : 'ask_customer_for_missing_information'\n        ),\n\n      evidence_received: evidence\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2912,
+        992
+      ],
+      "id": "4af71e33-1473-435a-a082-e32361884ebb",
+      "name": "[ESCALATION] - Extract Update Analysis"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "457032b1-93a8-44b0-8a98-072608315ca3",
+              "leftValue": "={{ $json.update_analysis.case_ready }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3200,
+        992
+      ],
+      "id": "c14c700e-60b8-4948-8ee5-70c0371ef104",
+      "name": "[ESCALATION] - Case Ready?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const analysis = $json.update_analysis;\nconst caseData = $json.active_escalation_case;\n\nreturn [{\n  json: {\n    ...$json,\n\n    escalation_state: 'READY_FOR_AGENT',\n\n    case_update: {\n      case_id: caseData.case_id,\n      status: 'ready_for_agent',\n      provided_information: analysis.provided_information,\n      remaining_information: analysis.still_missing_information,\n      evidence_received: analysis.evidence_received\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3424,
+        896
+      ],
+      "id": "397bb6e9-6543-462b-892f-b87ce4b95fbf",
+      "name": "[ESCALATION] - Prepare Human Handoff"
+    },
+    {
+      "parameters": {
+        "jsCode": "const analysis = $json.update_analysis;\nconst caseData = $json.active_escalation_case;\n\nreturn [{\n  json: {\n    ...$json,\n\n    escalation_state: 'AWAITING_CUSTOMER_INFO',\n\n    case_update: {\n      case_id: caseData.case_id,\n      status: 'awaiting_customer_info',\n      provided_information: analysis.provided_information,\n      remaining_information: analysis.still_missing_information,\n      evidence_received: analysis.evidence_received\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3424,
+        1088
+      ],
+      "id": "d824b480-360e-4be1-8d21-587dcaee6dd1",
+      "name": "[ESCALATION] - Prepare Additional Information Request"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "escalation_cases",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "case_id",
+              "condition": "eq",
+              "keyValue": "={{$json.case_update.case_id}}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "ready_for_agent"
+            },
+            {
+              "fieldId": "provided_information",
+              "fieldValue": "={{ JSON.stringify($json.case_update.provided_information) }}"
+            },
+            {
+              "fieldId": "missing_information",
+              "fieldValue": "={{ JSON.stringify($json.case_update.remaining_information) }}"
+            },
+            {
+              "fieldId": "case_context",
+              "fieldValue": "={{\nJSON.stringify({\n  evidence_received: $json.case_update.evidence_received || [],\n  last_customer_message: $json.intake_context.customer_message || '',\n  update_analysis: $json.update_analysis || {},\n  next_action: $json.update_analysis?.next_action || '',\n  customer_action_required: $json.update_analysis?.customer_action_required ?? false\n})\n}}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3648,
+        896
+      ],
+      "id": "24a3374c-c1d7-4f49-a66e-75da5e20c1f4",
+      "name": "[ESCALATION] - Update Case Ready",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AWapg2iswUxnGF2X",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "escalation_cases",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "case_id",
+              "condition": "eq",
+              "keyValue": "={{$json.case_update.case_id}}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "provided_information",
+              "fieldValue": "={{ JSON.stringify($json.case_update.provided_information) }}"
+            },
+            {
+              "fieldId": "missing_information",
+              "fieldValue": "={{ JSON.stringify($json.case_update.remaining_information) }}"
+            },
+            {
+              "fieldId": "case_context",
+              "fieldValue": "={{ JSON.stringify({   evidence_received: $json.case_update.evidence_received,   last_customer_message: $json.intake_context.customer_message }) }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            },
+            {
+              "fieldId": "intake_attempts",
+              "fieldValue": "={{ Number($json.active_escalation_case.intake_attempts || 0) + 1 }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3648,
+        1088
+      ],
+      "id": "24c4cfaf-4992-4644-88f5-c7f42420a1c5",
+      "name": "[ESCALATION] - Update Case Awaiting Info",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AWapg2iswUxnGF2X",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('[ESCALATION] - Prepare Additional Information Request').item.json;\n\nconst analysis = ctx.update_analysis || {};\nconst intake = ctx.intake_context || {};\n\nconst missing = Array.isArray(analysis.still_missing_information)\n  ? analysis.still_missing_information\n  : [];\n\nconst provided = Array.isArray(analysis.provided_information)\n  ? analysis.provided_information\n  : [];\n\nconst customerMessage =\n  intake.customer_message ||\n  ctx.text ||\n  '';\n\nconst prompt = `\nYou are an empathetic customer support escalation assistant.\n\nThe customer is already in an escalation workflow.\n\nThey have just provided additional information. The case is NOT yet ready for human investigation because some useful information is still missing.\n\nCustomer's latest message:\n${customerMessage}\n\nInformation newly provided:\n${JSON.stringify(provided)}\n\nInformation still missing:\n${JSON.stringify(missing)}\n\nRules:\n\n- Acknowledge what the customer just provided.\n- Thank them for providing the information.\n- Do not ask for information they already supplied.\n- Ask only for the remaining information that is genuinely useful.\n- Keep the request concise and practical.\n- Never request passwords, CVVs, full card numbers, one-time authentication codes, or other sensitive credentials.\n- If a screenshot would help, ask for a redacted screenshot and explicitly tell the customer to hide sensitive payment or authentication information.\n- Do not claim the case is ready for a human agent.\n- Do not claim a human agent has already reviewed the case.\n- Do not invent policy, refund, account, or transaction details.\n- Sound like a real, empathetic support representative.\n- Avoid generic phrases such as \"we value your patience.\"\n- Make the response specific to the information the customer just provided.\n\nWrite ONLY the customer-facing response.\n`;\n\nreturn [{\n  json: {\n    ...ctx,\n    follow_up_prompt: prompt\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3936,
+        1088
+      ],
+      "id": "c8bb6af6-f863-491f-8213-cdc3f594ce46",
+      "name": "[ESCALATION] - Build Follow-Up Response Prompt"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.follow_up_prompt}}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        4320,
+        1088
+      ],
+      "id": "44e83b8a-20bd-43f1-a60f-3d628704cd70",
+      "name": "[ESCALATION] - Generate Follow-Up Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const generatedText = $json.text || '';\n\nreturn [{\n  json: {\n    ...$json,\n\n    response_text: generatedText,\n    customer_response: generatedText\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4688,
+        1088
+      ],
+      "id": "d05ccb0a-dfeb-4fd0-8e07-eb0701168e65",
+      "name": "[ESCALATION] - Prepare Waiting Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('[ESCALATION] - Prepare Human Handoff').item.json;\n\nconst caseUpdate = ctx.case_update || {};\nconst caseId = caseUpdate.case_id || null;\n\nconst response =\n  \"Thanks for providing those details. I\u2019ve added them to your case, and it\u2019s now ready for our support team to review. A human support agent will follow up with you.\";\n\nreturn [{\n  json: {\n    ...ctx,\n\n    response_text: response,\n\n    customer_response: response,\n\n    case_id: caseId,\n\n    escalation_state: 'READY_FOR_AGENT'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3920,
+        896
+      ],
+      "id": "ec92a118-21e3-443f-84e8-d6a75b00fd2a",
+      "name": "[ESCALATION] - Prepare Ready Handoff Response"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-3.7-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        2128,
+        1632
+      ],
+      "id": "bd47dbcf-1b62-4e59-ab67-493abd385050",
+      "name": "[RAG] - Gemini Classification Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "XIZL61oozki8j0sl",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-3.7-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        2496,
+        1200
+      ],
+      "id": "c4133eaf-c2fe-4266-a072-3a781eb2027c",
+      "name": "[ESCALATION] - Gemini Update Analysis Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "XIZL61oozki8j0sl",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-3.7-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        4096,
+        1472
+      ],
+      "id": "970ae680-59db-411c-a7c0-72a66882c144",
+      "name": "[RAG] - Gemini Response Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "XIZL61oozki8j0sl",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-3.7-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        4336,
+        1232
+      ],
+      "id": "46fa0a16-38f8-487e-8db9-b05a9fce0083",
+      "name": "[ESCALATION] - Gemini Follow-Up Response Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "XIZL61oozki8j0sl",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-3.7-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        6704,
+        1456
+      ],
+      "id": "199753bd-e121-49f4-b4c8-7529575407c8",
+      "name": "[ESCALATION] - Gemini Requirements Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "XIZL61oozki8j0sl",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-3.7-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        7712,
+        1520
+      ],
+      "id": "5bcd5008-ea72-455c-a5b5-9e99c87f2b07",
+      "name": "[ESCALATION] - Gemini Customer Response Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "XIZL61oozki8j0sl",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Prepare Validation Error": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Log Ingestion Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Log Validation Error": {
+      "main": [
+        [
+          {
+            "node": "Respond - Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write User Turn": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Log Write Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Write Failure": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Log Validation Error1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Validation Error1": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Log Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Receive Document": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Unwrap Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Unwrap Request": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Route File Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[GUARDRAIL] - Prepare Decision Context": {
+      "main": [
+        [
+          {
+            "node": "[GUARDRAIL] - Check Risk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[GUARDRAIL] - Check Risk": {
+      "main": [
+        [
+          {
+            "node": "[GUARDRAIL] - Prepare Risk Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[GUARDRAIL] - Check Retrieval Quality",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[GUARDRAIL] - Check Retrieval Quality": {
+      "main": [
+        [
+          {
+            "node": "[GUARDRAIL] - Check Confidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[GUARDRAIL] - Prepare Retrieval Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[GUARDRAIL] - Check Confidence": {
+      "main": [
+        [
+          {
+            "node": "[GUARDRAIL] - Prepare Response Decision",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[GUARDRAIL] - Prepare Confidence Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[GUARDRAIL] - Prepare Response Decision": {
+      "main": [
+        [
+          {
+            "node": "[GUARDRAIL] - Build Decision Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[GUARDRAIL] - Prepare Confidence Escalation": {
+      "main": [
+        [
+          {
+            "node": "[GUARDRAIL] - Build Decision Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[GUARDRAIL] - Prepare Retrieval Escalation": {
+      "main": [
+        [
+          {
+            "node": "[GUARDRAIL] - Build Decision Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[GUARDRAIL] - Prepare Risk Escalation": {
+      "main": [
+        [
+          {
+            "node": "[GUARDRAIL] - Build Decision Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[MEMORY] - Save Assistant Turn": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Log Write Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[GUARDRAIL] - Build Decision Result": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[CHAT] - Build Final Response": {
+      "main": [
+        [
+          {
+            "node": "[CHAT] - Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[CHAT] - Receive Message": {
+      "main": [
+        [
+          {
+            "node": "[CHAT] - Unwrap Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[CHAT] - Unwrap Request": {
+      "main": [
+        [
+          {
+            "node": "[CHAT] - Validate Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[CHAT] - Validate Message": {
+      "main": [
+        [
+          {
+            "node": "[CHAT] - Load Tenant Config",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Validation Error1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[CHAT] - Load Tenant Config": {
+      "main": [
+        [
+          {
+            "node": "[CHAT] - Load Customer Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[CHAT] - Load Customer Context": {
+      "main": [
+        [
+          {
+            "node": "[CHAT] - Load Conversation History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[CHAT] - Load Conversation History": {
+      "main": [
+        [
+          {
+            "node": "[CHAT] - Build Conversation Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[CHAT] - Build Conversation Context": {
+      "main": [
+        [
+          {
+            "node": "Write User Turn",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "[ESCALATION] - Check Active Case",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Build Intent Prompt": {
+      "main": [
+        [
+          {
+            "node": "[RAG] - Classify Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Classify Intent": {
+      "main": [
+        [
+          {
+            "node": "[RAG] - Extract Intent Signals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Extract Intent Signals": {
+      "main": [
+        [
+          {
+            "node": "[RAG] - Retrieve Knowledge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Retrieve Knowledge": {
+      "main": [
+        [
+          {
+            "node": "[RAG] - Build Retrieved Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Parse Intent Output": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "[RAG] - Classify Intent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Gemini Query Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "[RAG] - Retrieve Knowledge",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Build Retrieved Context": {
+      "main": [
+        [
+          {
+            "node": "[RAG] - Validate Retrieval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Validate Retrieval": {
+      "main": [
+        [
+          {
+            "node": "[RAG] - Build Response Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[RAG] - Handle No Knowledge Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Build Response Prompt": {
+      "main": [
+        [
+          {
+            "node": "[RAG] - Generate Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Generate Response": {
+      "main": [
+        [
+          {
+            "node": "[RAG] - Score Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Score Response": {
+      "main": [
+        [
+          {
+            "node": "[GUARDRAIL] - Prepare Decision Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Handle No Knowledge Found": {
+      "main": [
+        [
+          {
+            "node": "[GUARDRAIL] - Prepare Decision Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Route File Type": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Download PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[INGEST] - Extract Markdown Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Download PDF": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Extract PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Extract PDF Text": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Normalize Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Extract Markdown Text": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Normalize Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Normalize Document": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Check Previous Ingestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Check Previous Ingestion": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Evaluate Previous Ingestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Evaluate Previous Ingestion": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Existing Document?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Existing Document?": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Delete Existing Vectors",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[INGEST] - Validate Extracted Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Delete Existing Vectors": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Restore Document Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Restore Document Context": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Validate Extracted Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Validate Extracted Text": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Chunk Document",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Chunk Document": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Validate Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Validate Chunks": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Index Knowledge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[INGEST] - Prepare Chunk Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Prepare Chunk Validation Error": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Log Ingestion Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Gemini Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "[INGEST] - Index Knowledge",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Build Pinecone Documents": {
+      "ai_document": [
+        [
+          {
+            "node": "[INGEST] - Index Knowledge",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Document Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "[INGEST] - Build Pinecone Documents",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Index Knowledge": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Build Ingestion Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Build Ingestion Result": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Log Ingestion Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Log Ingestion Run": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ERROR] - Workflow Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "[ERROR] - Normalize Workflow Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ERROR] - Normalize Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "[ERROR] - Prepare Workflow Error Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ERROR] - Prepare Workflow Error Log": {
+      "main": [
+        [
+          {
+            "node": "[ERROR] - Save Workflow Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ERROR] - Save Workflow Error": {
+      "main": [
+        []
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Build Case Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[MEMORY] - Save Assistant Turn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Build Case Context": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Build Requirements Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Build Requirements Prompt": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Analyze Case Requirements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Parse Requirements": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "[ESCALATION] - Analyze Case Requirements",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Analyze Case Requirements": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Extract Requirements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Extract Requirements": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Save Case",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Build Customer Response Prompt": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Generate Customer Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Generate Customer Response": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Prepare Customer Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Prepare Customer Response": {
+      "main": [
+        [
+          {
+            "node": "[MEMORY] - Save Assistant Turn",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "[CHAT] - Build Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Save Case": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Build Customer Response Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Check Active Case": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Evaluate Active Case",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Evaluate Active Case": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Active Case?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Active Case?": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Build Intake Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[RAG] - Build Intent Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Build Intake Context": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Build Update Analysis Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Build Update Analysis Prompt": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Analyze Customer Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Parse Update Analysis": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "[ESCALATION] - Analyze Customer Update",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Analyze Customer Update": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Extract Update Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Extract Update Analysis": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Case Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Case Ready?": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Prepare Human Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[ESCALATION] - Prepare Additional Information Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Prepare Human Handoff": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Update Case Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Prepare Additional Information Request": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Update Case Awaiting Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Update Case Awaiting Info": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Build Follow-Up Response Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Build Follow-Up Response Prompt": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Generate Follow-Up Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Generate Follow-Up Response": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Prepare Waiting Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Prepare Waiting Response": {
+      "main": [
+        [
+          {
+            "node": "[MEMORY] - Save Assistant Turn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Update Case Ready": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Prepare Ready Handoff Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Prepare Ready Handoff Response": {
+      "main": [
+        [
+          {
+            "node": "[MEMORY] - Save Assistant Turn",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "[CHAT] - Build Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Gemini Classification Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "[RAG] - Classify Intent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Gemini Update Analysis Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "[ESCALATION] - Analyze Customer Update",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Gemini Response Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "[RAG] - Generate Response",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Gemini Follow-Up Response Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "[ESCALATION] - Generate Follow-Up Response",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Gemini Requirements Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "[ESCALATION] - Analyze Case Requirements",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ESCALATION] - Gemini Customer Response Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "[ESCALATION] - Generate Customer Response",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "e3ddc09e-2b51-4a30-936c-a28b033b3ca2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "797e1d7f5c66ac05aca3e1235fdd862ac6b84011015dc4a03bdfe55d9f3791ca"
+  },
+  "nodeGroups": [],
+  "id": "d01SQgP4IT91lQup",
+  "tags": [
+    {
+      "updatedAt": "2026-08-08T14:54:06.008Z",
+      "createdAt": "2026-08-08T14:54:06.008Z",
+      "id": "Tuv7NubdKIBaQBa8",
+      "name": "customer support platfom"
+    }
+  ]
+}

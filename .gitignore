@@ -1,0 +1,21 @@
+# Secrets & credentials — never commit real values
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+credentials.json
+secrets/
+service-role*.txt
+
+# n8n export artifacts that can carry local/session-specific noise
+*.n8n_backup
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node (if any tooling gets added later)
+node_modules/

@@ -1,0 +1,11 @@
+{
+  "doc_id": "kb-b2b-002",
+  "tenant_id": "b2b-saas-demo",
+  "industry_pack": "saas",
+  "title": "API Authentication",
+  "category": "technical",
+  "version": "1.2",
+  "last_updated": "2026-07-15",
+  "file_type": "md",
+  "file_content": "# API Authentication\n\n## Overview\n\nFlowStack's REST API uses API keys for authentication. Every request to the API must include a valid key in the `Authorization` header.\n\n## Generating an API Key\n\n1. Go to **Settings \u2192 API Keys** in your FlowStack dashboard.\n2. Click **Generate New Key**.\n3. Name the key (e.g., \"Production Server\") and select its scope: `read-only`, `read-write`, or `admin`.\n4. Copy the key immediately \u2014 for security reasons, the full key is only shown once.\n\n## Using the Key\n\nInclude the key in every request as a Bearer token:\n\n```\nAuthorization: Bearer fs_live_xxxxxxxxxxxxxxxx\n```\n\nKeys prefixed `fs_live_` are production keys. Keys prefixed `fs_test_` are sandbox keys and do not affect live workflows or billing.\n\n## Key Rotation\n\nAPI keys do not expire automatically, but we recommend rotating production keys every 90 days. To rotate a key without downtime, generate a new key, update your integration to use it, confirm requests are succeeding with the new key, then revoke the old key from the API Keys settings page.\n\n## Rate Limits\n\n- Starter and Growth plans: 100 requests/minute per key.\n- Enterprise plans: 1,000 requests/minute per key, with the option to request higher limits.\n\nExceeding the rate limit returns a `429 Too Many Requests` response with a `Retry-After` header indicating how many seconds to wait.\n\n## Common Errors\n\n- `401 Unauthorized` \u2014 key is missing, malformed, or revoked.\n- `403 Forbidden` \u2014 key is valid but lacks scope for the requested action (e.g., a `read-only` key attempting a write).\n- `429 Too Many Requests` \u2014 rate limit exceeded."
+}

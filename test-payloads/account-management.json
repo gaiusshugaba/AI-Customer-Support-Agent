@@ -1,0 +1,11 @@
+{
+  "doc_id": "kb-b2b-004",
+  "tenant_id": "b2b-saas-demo",
+  "industry_pack": "saas",
+  "title": "Account & Team Management",
+  "category": "account",
+  "version": "1.0",
+  "last_updated": "2026-07-28",
+  "file_type": "md",
+  "file_content": "# Account & Team Management\n\n## User Roles\n\nFlowStack accounts support three roles:\n\n- **Owner** \u2014 one per account, billing access, can delete the account, can transfer ownership.\n- **Admin** \u2014 can manage workflows, connectors, and team members, but cannot change billing or delete the account.\n- **Member** \u2014 can build and edit workflows they have access to, cannot manage team members or billing.\n\n## Inviting Team Members\n\nGo to **Settings \u2192 Team \u2192 Invite Member**, enter their email and select a role. Invitees receive an email with a signup link valid for 7 days. Growth and Enterprise plans support unlimited team members; Starter is capped at 3 seats.\n\n## Single Sign-On (SSO)\n\nSSO (SAML 2.0) is available on Enterprise plans only. Once configured by your account manager, team members sign in through your identity provider and new accounts are provisioned automatically on first login \u2014 you don't need to send individual invites once SSO is active.\n\n## Changing Account Email\n\nOnly the account Owner can change the primary account email, under **Settings \u2192 Account \u2192 Email**. A confirmation link is sent to both the old and new address; the change only takes effect once the new address is confirmed. This is a security measure and cannot be bypassed by support.\n\n## Deleting Your Account\n\nAccount deletion is available to Owners only, under **Settings \u2192 Account \u2192 Delete Account**. This immediately stops all workflow executions and is irreversible after a 14-day grace period, during which you can contact support to restore the account. After 14 days, all workflow data, execution history, and connector credentials are permanently deleted.\n\n## Transferring Ownership\n\nGo to **Settings \u2192 Team \u2192 Transfer Ownership**, select the new owner (must already be an Admin on the account), and confirm via the email link sent to the current Owner. The current Owner is automatically downgraded to Admin once the transfer completes."
+}
