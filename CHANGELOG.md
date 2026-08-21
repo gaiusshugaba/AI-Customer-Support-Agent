@@ -61,6 +61,14 @@ All notable changes to this project are documented here, phase by phase, in the 
 - A Pinecone dimension-mismatch error revealed the real embedding output is 3072-dimensional, not the 768 implied by the node's own on-screen advisory text, which turned out to describe a different model in the same dropdown. The Pinecone index was re-provisioned to match.
 - An aggregation node was losing `doc_id`/`tenant_id`/`title` because a Vector Store node's own output doesn't reliably pass through custom fields from its input — fixed by having the aggregation step reach back to the chunking node by name instead of trusting its immediate input.
 - Logging moved from Airtable to Supabase mid-build, after recognizing that continuing to build new tables on Airtable was creating migration debt that would just have to be paid down later anyway.
+### Fixed (Frontend Integration — Lovable Multipart Upload)
+- `[INGEST] - Unwrap Request` was discarding the uploaded file binary, assuming a JSON payload with `file_content`. Fixed to preserve `$binary` so multipart/form-data uploads from the Lovable frontend flow through correctly.
+- `[INGEST] - Route File Type` had a `=={{` typo in its condition expression, causing the boolean check to resolve to a string (`"=true"`) rather than a real boolean. PDFs were silently misrouted. Fixed by switching to a string-equality comparison (`={{ ($binary.file?.fileExtension || '').toLowerCase() }}` equals `pdf`).
+- `[INGEST] - Extract PDF Text` (n8n's built-in Extract From File node) outputs extracted text to `$json.text`, but `[INGEST] - Validate Extracted Text` checks `$json.extracted_text` — the field name used by the Markdown extraction branch. Fixed by having `[INGEST] - Normalize Document` normalize both fields into `extracted_text` (`source.extracted_text || source.text || ''`), bridging the gap without adding an extra mapping node.
+- `[INGEST] - Normalize Document` was not parsing document metadata embedded in the text content (e.g., `Document ID`, `Tenant`, `Category`, `Version`, `Last Updated` headers inside PDFs/Markdown). It also failed to derive `file_type` when `$binary.file.fileExtension` was empty after extraction. Fixed with a hybrid resolver: text metadata > request body > filename parsing > MIME type inference.
+- `[INGEST] - Respond` had the same `=={{` typo in its Response Body, causing n8n's JSON parser to fail with "Invalid JSON in 'Response Body' field". Fixed by correcting to `={{` and wrapping the expression in `JSON.stringify()` to guarantee valid JSON output regardless of n8n's internal validation.
+- `[INGEST] - Download PDF` was fully orphaned after the routing fix rerouted PDF uploads directly to Extract PDF Text. Removed from the active path (safe to delete from the canvas).
+
 
 ---
 

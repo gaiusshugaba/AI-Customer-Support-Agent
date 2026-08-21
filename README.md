@@ -82,6 +82,43 @@ Deterministic Guardrail ──── low confidence / risk flag ──→ Escala
 
 **Why 3072-dimensional embeddings, specifically.** Not a design choice — a real Pinecone dimension-mismatch error revealed `gemini-embedding-001` actually outputs 3072 dimensions, contradicting the node's own on-screen advisory text (which described a different model in the same dropdown). The index was provisioned to match reality once it was confirmed, not assumed from documentation.
 
+
+## Ingestion API Contract
+
+The knowledge-ingestion webhook accepts **two input formats**:
+
+### Primary: Multipart File Upload (Lovable Frontend)
+```
+POST /webhook/kb-ingest
+Content-Type: multipart/form-data
+
+Form fields:
+  tenant_id   (text)  — required
+  doc_id      (text)  — optional (extracted from file content if present)
+  file        (file)  — required: .md, .txt, .csv, or .pdf
+```
+
+The workflow derives metadata automatically:
+- `doc_id` / `tenant_id` / `category` / `version` / `last_updated` — parsed from document headers (`Document ID`, `Tenant`, `Category`, etc.)
+- `title` — parsed from first line of text, or derived from filename
+- `file_type` — from binary metadata, filename extension, or MIME type
+
+### Legacy: JSON Body with file_content
+```json
+{
+  "doc_id": "kb-b2b-001",
+  "tenant_id": "b2b-saas-demo",
+  "title": "Product Overview",
+  "category": "general",
+  "version": "1.0",
+  "last_updated": "2026-08-01",
+  "file_type": "md",
+  "file_content": "# Product Overview\n..."
+}
+```
+
+This format is still supported for API-first integrations but requires all metadata to be provided explicitly.
+
 ## Failure handling
 
 This is the part most portfolio projects skip. A few examples of what actually happens when things go wrong, not just the happy path:
