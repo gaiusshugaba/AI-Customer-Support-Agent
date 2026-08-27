@@ -1,151 +1,350 @@
-# AI Customer Support Platform
+# \# FlowStack — AI Customer Support Platform \& Operations Engine
 
-An AI customer support agent built end-to-end in n8n: it answers customer questions grounded in real documentation, knows when it doesn't know something, and escalates to a human with full context instead of guessing. Built as a portfolio project to demonstrate real AI automation engineering — discovery, architecture, a working build, and the actual debugging that happened along the way, documented honestly rather than presented as a clean first draft.
+# 
 
-## Project Status
+# A multi-tenant, production-oriented AI customer support platform built in \*\*n8n\*\*, backed by \*\*Google Gemini\*\*, \*\*Pinecone\*\*, and \*\*Supabase (PostgreSQL)\*\*.
 
-🟢 Phase 0 — Discovery & Architecture — Complete
-🟢 Phase 1 — Knowledge Ingestion — Complete
-🟢 Phase 2 — Core RAG Response — Complete
-🟢 Phase 3 — Escalation & Human Handoff — Complete
-🟡 Phase 4 — Human Agent Operations — Not started
+# 
 
-See `CHANGELOG.md` for the full history of what changed and why, including the real bugs hit and fixed at each stage.
+# The system answers customer questions grounded in tenant documentation, incorporates account-level customer context, validates its own retrieval quality, and deterministically escalates complex or sensitive issues to humans while managing multi-turn case intake state.
 
-## The problem this solves
+# 
 
-Most AI support tools force a choice between cheap, fast-deploy chatbots that can't be trusted with anything nuanced, and enterprise platforms that need a six-figure implementation. This project is built for the gap between them: genuinely configurable across industries via configuration (not per-vertical code), grounded in the company's actual documentation, and honest about its own confidence.
+# !\[Workflow Status](https://img.shields.io/badge/Workflow-Active-emerald)
 
-## Architecture
+# !\[Architecture](https://img.shields.io/badge/Architecture-Stateless%20Orchestration-blue)
 
-```
-Customer Message
-       │
-       ▼
-Input Validation
-       │
-       ▼
-Context Loading (tenant config, customer profile, conversation history)
-       │
-       ▼
-Intent + Risk Classification (structured output, not free text)
-       │
-       ▼
-Tenant-scoped Retrieval (Pinecone, namespaced per tenant)
-       │
-       ▼
-Retrieval Validation ──── nothing relevant found ──→ Honest fallback, no guess
-       │
-       ▼
-Grounded Generation (strictly from retrieved content)
-       │
-       ▼
-Confidence Scoring (computed, not self-reported by the model)
-       │
-       ▼
-Deterministic Guardrail ──── low confidence / risk flag ──→ Escalation
-       │                                                          │
-       ▼                                                          ▼
-  Respond to customer                                    Case intake & tracking
-                                                                   │
-                                                          Missing-info collection
-                                                                   │
-                                                          AWAITING_CUSTOMER_INFO
-                                                                   │
-                                                              (multi-turn)
-                                                                   │
-                                                          READY_FOR_AGENT → Human handoff
-```
+# !\[Database](https://img.shields.io/badge/Database-PostgreSQL%20(Supabase)-3ECF8E)
 
-## Tech stack
+# !\[Vector Store](https://img.shields.io/badge/Vectors-Pinecone%20(Namespaced)-000000)
 
-| Layer | Choice | Why |
-|---|---|---|
-| Orchestration | n8n | Real orchestration complexity (routing between AI calls and business systems), visual enough to reason about, self-hosted |
-| LLM | Google Gemini | Free tier, deliberately, to prove the architecture before any spend |
-| Vector store | Pinecone | Tenant-namespaced retrieval, one index shared across all tenants |
-| Database | Supabase (Postgres) | Genuine Postgres, no migration debt later — see "Key Engineering Decisions" |
+# !\[Embeddings](https://img.shields.io/badge/Embeddings-Gemini%20(3072--dim)-4285F4)
 
-## Key engineering decisions
+# 
 
-**No AI Agent node in Phase 2.** The response pipeline is a fixed sequence — Classify → Retrieve → Generate → Score — not an autonomous reasoning loop. Predictable failure modes matter more here than flexibility: when something breaks, there's exactly one place to look for each step, not an agent's internal tool-selection reasoning to untangle.
+# \---
 
-**Escalation is deterministic, not AI-decided.** Confidence score, retrieval score, and risk flags are all produced by the AI, but a plain logic gate — not the model — decides whether to escalate. The model doesn't get to grade its own homework and act on the grade.
+# 
 
-**Escalation state is maintained separately from response generation.** The AI generates conversation turns; the system independently tracks what was requested, what's been provided, what's missing, and whether a case is ready for a human. This is what makes multi-message case intake possible without losing track of state.
+# \## Core Engineering Principles
 
-**Confidence is computed, not self-reported.** Asking a model "how confident are you" is circular. Confidence here is derived from retrieval quality, whether risk flags fired, and whether the generated text itself contains refusal language — independent signals, not the model grading itself.
+# 
 
-**Conversation memory lives outside the workflow.** n8n webhook executions are stateless between calls, so conversation history is persisted in Supabase and reloaded fresh on every turn, not assumed to persist in-memory.
+# 1\. \*\*Deterministic Guardrails over Autonomous AI Agents\*\*  
 
-**Supabase from the start, not Airtable-then-migrate.** Originally planned Airtable-first for MVP speed, reversed mid-build after recognizing every new table built on Airtable was migration debt being deliberately created. Cheaper to absorb that cost once than repeatedly.
+# &#x20;  The response pipeline follows a predictable sequence: `Classify` → `Retrieve` → `Generate` → `Score` → `Guardrail Route`. The LLM generates candidate text and classification signals, but explicit logical conditions decide whether to answer or escalate. The model does not grade its own homework or decide its own escalation.
 
-**Why 3072-dimensional embeddings, specifically.** Not a design choice — a real Pinecone dimension-mismatch error revealed `gemini-embedding-001` actually outputs 3072 dimensions, contradicting the node's own on-screen advisory text (which described a different model in the same dropdown). The index was provisioned to match reality once it was confirmed, not assumed from documentation.
+# 
 
+# 2\. \*\*Context-Aware Grounding (Knowledge + Customer Data)\*\*  
 
-## Ingestion API Contract
+# &#x20;  Retrieval is split across two authoritative sources: tenant knowledge bases (general policies, guides) and customer account state (plan tier, account status, entitlements). The AI never asks the customer for information already present in their profile.
 
-The knowledge-ingestion webhook accepts **two input formats**:
+# 
 
-### Primary: Multipart File Upload (Lovable Frontend)
-```
-POST /webhook/kb-ingest
-Content-Type: multipart/form-data
+# 3\. \*\*Multi-Turn Escalation State Machine with Case Relevance\*\*  
 
-Form fields:
-  tenant_id   (text)  — required
-  doc_id      (text)  — optional (extracted from file content if present)
-  file        (file)  — required: .md, .txt, .csv, or .pdf
-```
+# &#x20;  Escalation cases are tracked separately from conversation turns. When an active case exists, incoming messages are checked by a \*\*Case Relevance Classifier\*\*:
 
-The workflow derives metadata automatically:
-- `doc_id` / `tenant_id` / `category` / `version` / `last_updated` — parsed from document headers (`Document ID`, `Tenant`, `Category`, etc.)
-- `title` — parsed from first line of text, or derived from filename
-- `file_type` — from binary metadata, filename extension, or MIME type
+# &#x20;  - If the user provides requested details for the case → merges information into the existing ticket (`AWAITING\_CUSTOMER\_INFO` → `READY\_FOR\_AGENT`).
 
-### Legacy: JSON Body with file_content
-```json
-{
-  "doc_id": "kb-b2b-001",
-  "tenant_id": "b2b-saas-demo",
-  "title": "Product Overview",
-  "category": "general",
-  "version": "1.0",
-  "last_updated": "2026-08-01",
-  "file_type": "md",
-  "file_content": "# Product Overview\n..."
-}
-```
+# &#x20;  - If the user switches topics → automatically routes back to standard RAG without hijacking the conversation.
 
-This format is still supported for API-first integrations but requires all metadata to be provided explicitly.
+# 
 
-## Failure handling
+# 4\. \*\*Tenant Namespace Isolation\*\*  
 
-This is the part most portfolio projects skip. A few examples of what actually happens when things go wrong, not just the happy path:
+# &#x20;  All Pinecone vectors and Supabase records are partitioned by `tenant\_id`. Cross-tenant retrieval leakage is physically impossible at the query layer.
 
-```
-Invalid request            → validation failure → structured error log
-No extractable text        → validation failure → structured error log
-Zero chunks produced       → validation failure → structured error log
-Nothing relevant retrieved → honest fallback, no generation attempted
-Risk flag detected         → escalation, not a generated answer
-Missing case information   → AWAITING_CUSTOMER_INFO, asks only for what's missing
-Enough information         → READY_FOR_AGENT, human handoff with full context
-```
+# 
 
-Every failure path logs a structured record — which node, what happened, why — to the same log schema whether it came from an explicit validation check or an unhandled error caught by the workflow's error trigger. No silent failures anywhere in the pipeline.
+# 5\. \*\*No Silent Failures \& Zero Fabricated Data\*\*  
 
-## What's genuinely still rough
+# &#x20;  Every validation failure, extraction error, and database issue writes a structured error record to Supabase. Fallbacks explicitly state when knowledge is missing ($confidence = 0$).
 
-- Prompt content lives directly in Code nodes rather than a queryable `Prompt_Library` table — fine for one tenant, a real limitation if per-tenant prompt overrides become necessary.
-- The retrieval-validation step (Phase 2) and the guardrail routing step (Phase 3) have some conceptual overlap that hasn't been fully untangled yet.
-- Response quality under real testing surfaced a genuine LLM behavior issue — a structured-output example too similar to a real test case caused the model to anchor on the example instead of the actual input. Fixed once, worth re-auditing other prompts for the same risk.
-- Phase 4 (what happens after a human picks up an escalated case) hasn't been designed yet.
+# 
 
-## Roadmap
+# \---
 
-Phase 4 — human agent operations (queue, assignment, resolution tracking) is next.
+# 
 
----
+# \## High-Level Architecture
 
-*Built and documented as a portfolio project. `CHANGELOG.md` has the full build history; `docs/` has the deeper design documents (discovery, architecture, data model) this was built from.*
+# 
+
+# ```
+
+# &#x20;                   ┌──────────────────────────────────────────────┐
+
+# &#x20;                   │               Customer Message               │
+
+# &#x20;                   └──────────────────────┬───────────────────────┘
+
+# &#x20;                                          │
+
+# &#x20;                                          ▼
+
+# &#x20;                   ┌──────────────────────────────────────────────┐
+
+# &#x20;                   │       Input Validation \& Context Merge       │
+
+# &#x20;                   │  (Tenant Config + Customer Profile + History)│
+
+# &#x20;                   └──────────────────────┬───────────────────────┘
+
+# &#x20;                                          │
+
+# &#x20;                                          ▼
+
+# &#x20;                   ┌──────────────────────────────────────────────┐
+
+# &#x20;                   │     Active Case Check \& Relevance Routing    │
+
+# &#x20;                   └───────┬──────────────────────────────┬───────┘
+
+# &#x20;                           │                              │
+
+# &#x20;         Existing Case \&   │                              │ New Question /
+
+# &#x20;         Message Matches   │                              │ Unrelated Topic
+
+# &#x20;                           ▼                              ▼
+
+# &#x20;            ┌─────────────────────────────┐┌──────────────────────────────┐
+
+# &#x20;            │    Escalation Intake \&      ││   Intent \& Risk Classifier   │
+
+# &#x20;            │   Follow-Up State Merge     ││  (Structured JSON Output)    │
+
+# &#x20;            └──────────────┬──────────────┘└──────────────┬───────────────┘
+
+# &#x20;                           │                              │
+
+# &#x20;                           ▼                              ▼
+
+# &#x20;            ┌─────────────────────────────┐┌──────────────────────────────┐
+
+# &#x20;            │ Update Case in Supabase     ││ Tenant-Scoped Vector Search  │
+
+# &#x20;            │ (Awaiting Info vs Ready)    ││   (Pinecone 3072-dim)        │
+
+# &#x20;            └──────────────┬──────────────┘└──────────────┬───────────────┘
+
+# &#x20;                           │                              │
+
+# &#x20;                           │                              ▼
+
+# &#x20;                           │               ┌──────────────────────────────┐
+
+# &#x20;                           │               │ Grounded Response Generator  │
+
+# &#x20;                           │               │ + Confidence Heuristic Score │
+
+# &#x20;                           │               └──────────────┬───────────────┘
+
+# &#x20;                           │                              │
+
+# &#x20;                           │                              ▼
+
+# &#x20;                           │               ┌──────────────────────────────┐
+
+# &#x20;                           │               │   Deterministic Guardrails   │
+
+# &#x20;                           │               │(Risk / Account Req / Scores) │
+
+# &#x20;                           │               └──────┬───────────────┬───────┘
+
+# &#x20;                           │                      │               │
+
+# &#x20;                           │             Pass     │               │ Risk / Low
+
+# &#x20;                           │          Guardrails  │               │ Retrieval
+
+# &#x20;                           │                      ▼               ▼
+
+# &#x20;                           │         ┌─────────────────┐ ┌────────────────┐
+
+# &#x20;                           │         │ Deliver RAG     │ │ Create Case \&  │
+
+# &#x20;                           │         │ Direct Answer   │ │ Intake Request │
+
+# &#x20;                           │         └────────┬────────┘ └────────┬───────┘
+
+# &#x20;                           │                  │                   │
+
+# &#x20;                           └──────────────────┴─────────┬─────────┘
+
+# &#x20;                                                        │
+
+# &#x20;                                                        ▼
+
+# &#x20;                                           ┌──────────────────────────────┐
+
+# &#x20;                                           │ Persist Turns to Supabase \&  │
+
+# &#x20;                                           │  Deliver Webhook JSON Body   │
+
+# &#x20;                                           └──────────────────────────────┘
+
+# ```
+
+# 
+
+# \---
+
+# 
+
+# \## Capability Breakdown by Phase
+
+# 
+
+# \### Phase 1 — Knowledge Ingestion \& Vector Indexing
+
+# \- Ingests Markdown, TXT, CSV, and PDF documents via multipart form uploads or JSON payloads.
+
+# \- \*\*Header-Aware Chunking:\*\* splits on `##` and `###` headers; long sections are sub-split into \~400-token segments with sentence-boundary awareness and \~50-token overlap.
+
+# \- \*\*Deduplication Engine:\*\* checks for prior successful ingestions of the document ID. If found, automatically clears out previous Pinecone vectors under the tenant namespace before indexing new embeddings.
+
+# \- Generates 3072-dimensional vector embeddings using Google Gemini (`models/gemini-embedding-001`).
+
+# 
+
+# \### Phase 2 — Core Grounded RAG \& Heuristic Scoring
+
+# \- Merges tenant configuration, customer profile data, and conversation history.
+
+# \- Classifies user intent into allowed tenant categories and extracts risk signals (`security`, `billing\_dispute`, `legal`, `churn\_threat`).
+
+# \- Executes Pinecone similarity search restricted to the tenant namespace.
+
+# \- Validates retrieval output: if no vectors are retrieved or score is below threshold, routes to an honest no-knowledge fallback without hallucinating.
+
+# \- Response scoring evaluates retrieval confidence and penalizes refusal indicators deterministically.
+
+# 
+
+# \### Phase 3 — Escalation Management \& Multi-Turn Intake
+
+# \- \*\*Deterministic Guardrail Layer:\*\* checks risk flags, required account data, customer profile availability, and similarity scores.
+
+# \- \*\*Intake Requirements Engine:\*\* analyzes what the customer provided vs. what a human support agent needs, requesting only missing details.
+
+# \- \*\*State Machine:\*\* transitions cases between `AWAITING\_CUSTOMER\_INFO` and `READY\_FOR\_AGENT`.
+
+# \- \*\*Case Relevance Engine:\*\* evaluates whether follow-ups belong to existing tickets or represent new queries.
+
+# 
+
+# \### Phase 4 / Admin Ops — FlowStack AI Support Ops Console
+
+# \- Dedicated administrator monitoring console for tracking conversations, cases, knowledge documents, and system health.
+
+# \- Real-time visibility into AI confidence scores, retrieval rankings, risk flags, and escalation state transitions.
+
+# 
+
+# \---
+
+# 
+
+# \## Tech Stack \& Infrastructure
+
+# 
+
+# | Layer | Component | Implementation Details |
+
+# |---|---|---|
+
+# | \*\*Orchestration\*\* | n8n | Stateless workflows with structured webhook routing and sub-nodes |
+
+# | \*\*LLM \& Embeddings\*\* | Google Gemini 3.7 Flash \& Embedding-001 | High-throughput structured JSON parsing \& 3072-dim embeddings |
+
+# | \*\*Vector Store\*\* | Pinecone | Single index (`customer-support-kb`), tenant-isolated namespaces |
+
+# | \*\*Primary Database\*\* | Supabase (PostgreSQL) | Stores tenant configs, customer records, turns, cases, and logs |
+
+# | \*\*Admin Frontend\*\* | React / Tailwind (FlowStack Ops) | Operations dashboard for monitoring chats, cases, and ingestion |
+
+# 
+
+# \---
+
+# 
+
+# \## Webhook Endpoints
+
+# 
+
+# \### 1. Conversation Message Endpoint
+
+# \- \*\*URL:\*\* `POST /webhook/conversation-message`
+
+# \- \*\*Payload:\*\*
+
+# ```json
+
+# {
+
+# &#x20; "tenant\_id": "b2b-saas-demo",
+
+# &#x20; "customer\_id": "cust-10293",
+
+# &#x20; "conversation\_id": "conv-88491",
+
+# &#x20; "text": "I was billed twice for my subscription this month."
+
+# }
+
+# ```
+
+# 
+
+# \### 2. Knowledge Ingestion Endpoint
+
+# \- \*\*URL:\*\* `POST /webhook/kb-ingest`
+
+# \- \*\*Content-Type:\*\* `multipart/form-data`
+
+# \- \*\*Fields:\*\*
+
+# &#x20; - `file`: File upload (`.pdf`, `.md`, `.txt`, `.csv`)
+
+# &#x20; - `tenant\_id`: Tenant identifier string
+
+# &#x20; - `doc\_id` \*(Optional)\*: Auto-inferred from document header or filename if omitted
+
+# 
+
+# \---
+
+# 
+
+# \## Repository Structure
+
+# 
+
+# ```
+
+# ├── README.md                                    # Project overview \& system architecture
+
+# ├── CHANGELOG.md                                 # Historical record of all updates \& fixes
+
+# ├── ARCHITECTURE.md                              # Detailed component design \& data flows
+
+# ├── DATABASE\_SCHEMA.md                           # Supabase Postgres \& Pinecone schemas
+
+# ├── API\_DOCUMENTATION.md                         # Webhook endpoints \& payload contracts
+
+# ├── TESTING.md                                   # Comprehensive test suite \& validation runs
+
+# ├── ROADMAP.md                                   # Future phases (Agent tooling, Analytics)
+
+# ├── \[Core] AI Customer Support Platform.json     # Production n8n workflow export
+
+# └── docs/
+
+# &#x20;   └── prompt-library.md                        # Production system prompts
+
+# ```
+
