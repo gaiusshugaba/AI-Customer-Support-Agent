@@ -119,8 +119,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        10000,
-        1968
+        10176,
+        2000
       ],
       "id": "6e7e94e4-2cda-400e-8b05-958d9a4218a6",
       "name": "Log Write Failure"
@@ -156,8 +156,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        10224,
-        1968
+        10368,
+        2000
       ],
       "id": "4bb570f6-0475-4d3c-b139-f06db9300fd3",
       "name": "Supabase - Log Validation Error1",
@@ -351,7 +351,7 @@
           "fieldValues": [
             {
               "fieldId": "conversation_id",
-              "fieldValue": "={{ $json.conversation_id }}"
+              "fieldValue": "={{ $json.conversation_id }}{{ $('[ESCALATION] - Build Follow-Up Response Prompt').item.json.conversation_id }}"
             },
             {
               "fieldId": "tenant_id",
@@ -2665,9 +2665,71 @@
       "typeVersion": 1,
       "id": "0034fe08-ead5-4a7e-9f0a-4bd8b8830255",
       "name": "Sticky Note20"
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiResponse = $json;\n\nconst original = $('[ESCALATION] - Build Follow-Up Response Prompt').item.json;\n\nreturn [\n  {\n    json: {\n      ...original,\n\n      text: aiResponse.text,\n\n      response_text: aiResponse.text,\n\n      customer_response: aiResponse.text\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        9504,
+        1392
+      ],
+      "id": "4aa1122d-8701-43df-b77c-bb49eb55c2ee",
+      "name": "[ESCALATION] - Restore Response Context"
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "[CHAT] - Receive Message": [
+      {
+        "json": {
+          "headers": {
+            "host": "f6nvuwee.rpcl.app",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+            "content-length": "179",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-US,en;q=0.9",
+            "cdn-loop": "cloudflare; loops=1",
+            "cf-connecting-ip": "197.211.59.198",
+            "cf-ipcountry": "NG",
+            "cf-ray": "a31ec30a8867f422-LHR",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "content-type": "application/json",
+            "origin": "https://id-preview--4a1573b3-107b-4e83-b75f-752e9c7619e9.lovable.app",
+            "priority": "u=1, i",
+            "referer": "https://id-preview--4a1573b3-107b-4e83-b75f-752e9c7619e9.lovable.app/",
+            "sec-ch-ua": "\"Not=A?Brand\";v=\"99\", \"Google Chrome\";v=\"151\", \"Chromium\";v=\"151\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "197.211.59.198, 162.158.216.10",
+            "x-forwarded-host": "f6nvuwee.rpcl.app",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "18a48e0c4bd7",
+            "x-real-ip": "162.158.216.10"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "tenant_id": "b2b-saas-demo",
+            "conversation_id": "73e27f3e-2e64-45cf-9e11-f88ff7a6028e",
+            "customer_id": "8808def2-1a90-4178-9a16-b4f5ce93511d",
+            "text": "I was charged twice this month"
+          },
+          "webhookUrl": "https://f6nvuwee.rpcl.app/webhook/conversation-message",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
   "connections": {
     "Prepare Validation Error": {
       "main": [
@@ -3634,7 +3696,7 @@
       "main": [
         [
           {
-            "node": "[ESCALATION] - Prepare Waiting Response",
+            "node": "[ESCALATION] - Restore Response Context",
             "type": "main",
             "index": 0
           }
@@ -3646,6 +3708,11 @@
         [
           {
             "node": "[MEMORY] - Save Assistant Turn",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "[CHAT] - Build Final Response",
             "type": "main",
             "index": 0
           }
@@ -3882,6 +3949,17 @@
           }
         ]
       ]
+    },
+    "[ESCALATION] - Restore Response Context": {
+      "main": [
+        [
+          {
+            "node": "[ESCALATION] - Prepare Waiting Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -3890,7 +3968,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "4bfec032-3c5a-46b3-88b4-d99878d86daf",
+  "versionId": "ad3fea90-94b2-432d-a4a7-36d27fb6bdfc",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "797e1d7f5c66ac05aca3e1235fdd862ac6b84011015dc4a03bdfe55d9f3791ca"
