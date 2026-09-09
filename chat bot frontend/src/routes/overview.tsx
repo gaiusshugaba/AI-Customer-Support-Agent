@@ -65,26 +65,26 @@ function OverviewPage() {
             <MetricCard
               label="Active conversations"
               to="/live-chats"
-              value={metrics.data!.activeConversations}
-              hint={`${metrics.data!.totalConversations} total recorded`}
+              value={metrics.data?.activeConversations ?? 0}
+              hint={`${metrics.data?.totalConversations ?? 0} total recorded`}
             />
             <MetricCard
               label="Open escalations"
               to="/escalations"
-              value={metrics.data!.openEscalations}
-              hint={`${metrics.data!.readyForAgent} ready for agent`}
+              value={metrics.data?.openEscalations ?? 0}
+              hint={`${metrics.data?.readyForAgent ?? 0} ready for agent`}
             />
             <MetricCard
               label="Documents"
               to="/documents"
-              value={metrics.data!.documents}
-              hint={`${metrics.data!.failedIngestions} failed ingestion(s)`}
+              value={metrics.data?.documents ?? 0}
+              hint={`${metrics.data?.failedIngestions ?? 0} failed ingestion(s)`}
             />
             <MetricCard
               label="Recent errors"
               to="/errors"
-              value={metrics.data!.recentErrors}
-              hint={`last 24h · ${metrics.data!.totalErrors} logged total`}
+              value={metrics.data?.recentErrors ?? 0}
+              hint={`last 24h · ${metrics.data?.totalErrors ?? 0} logged total`}
             />
           </div>
         )}
