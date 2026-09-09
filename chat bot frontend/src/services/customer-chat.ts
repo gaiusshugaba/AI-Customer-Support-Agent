@@ -3,7 +3,6 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ATTACHMENT_MAX_BYTES,
-  ATTACHMENT_MIME_TYPES,
   CHAT_ATTACHMENTS_BUCKET,
   CHAT_REQUEST_TIMEOUT_MS,
   WEBHOOKS,
@@ -20,7 +19,6 @@ export type ChatAttachment = {
   mime_type: string;
   file_size: number;
   created_at: string;
-  /** Time-limited signed URL, resolved on demand for display. */
   url: string | null;
 };
 
@@ -30,19 +28,34 @@ export type ChatMessage = {
   text: string | null;
   timestamp: string;
   attachments: ChatAttachment[];
-  /** Backend insertion sequence (conversation_turns.turn_id) when persisted. */
   seq?: number;
   pending?: boolean;
   failed?: boolean;
 };
 
-/**
- * The backend persists a round's assistant turn *before* the customer turn it
- * answers (consecutive turn_ids, milliseconds apart), so raw time/sequence
- * order shows the reply above the question. Restore the real round order by
- * swapping such a pair back.
- */
-const ROUND_PAIR_WINDOW_MS = 5_000;
+export type CustomerConversation = {
+  conversation_id: string;
+  tenant_id: string;
+  customer_id: string;
+  title: string | null;
+  created_at: string;
+  last_activity: string;
+  message_count: number;
+  last_message: string | null;
+};
+
+export type ChatOutcome =
+  | { kind: "answered" }
+  | { kind: "needs_information"; prompt: string | null }
+  | { kind: "handoff" };
+
+export type SendResult = { text: string; outcome: ChatOutcome };
+
+const TURN_COLUMNS = "turn_id, conversation_id, tenant_id, role, text, timestamp";
+
+const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+
+/* ------------------------------------------------------------------ helpers */
 
 function repairRoundOrder(messages: ChatMessage[]): ChatMessage[] {
   const out = [...messages];
@@ -55,7 +68,7 @@ function repairRoundOrder(messages: ChatMessage[]): ChatMessage[] {
     const dt = Math.abs(
       new Date(second.timestamp).getTime() - new Date(first.timestamp).getTime(),
     );
-    if (dt > ROUND_PAIR_WINDOW_MS) continue;
+    if (dt > 5000) continue;
     out[i] = second;
     out[i + 1] = first;
     i += 1;
@@ -63,10 +76,6 @@ function repairRoundOrder(messages: ChatMessage[]): ChatMessage[] {
   return out;
 }
 
-/**
- * Oldest → newest. Timestamps decide; the backend turn sequence breaks ties so
- * a reply can never render above the message it answers.
- */
 export function sortChronologically(messages: ChatMessage[]): ChatMessage[] {
   const sorted = [...messages]
     .map((m, index) => ({ m, index }))
@@ -81,35 +90,8 @@ export function sortChronologically(messages: ChatMessage[]): ChatMessage[] {
   return repairRoundOrder(sorted);
 }
 
+// --------------------------------------------------------------- customer profile
 
-
-export type CustomerConversation = {
-  conversation_id: string;
-  tenant_id: string;
-  customer_id: string;
-  title: string | null;
-  created_at: string;
-  last_activity: string;
-  message_count: number;
-  last_message: string | null;
-};
-
-/** Customer-safe view of what the workflow decided. No internal metadata. */
-export type ChatOutcome =
-  | { kind: "answered" }
-  | { kind: "needs_information"; prompt: string | null }
-  | { kind: "handoff" };
-
-export type SendResult = { text: string; outcome: ChatOutcome };
-
-const TURN_COLUMNS = "turn_id, conversation_id, tenant_id, role, text, timestamp";
-
-/* ------------------------------------------------- customer profile / tenant */
-
-/**
- * Loads the signed-in user's customer record, provisioning one on first sign-in
- * so that customer identity always lives in Supabase rather than local state.
- */
 export async function loadCustomerProfile(
   userId: string,
   email: string | null,
@@ -144,7 +126,7 @@ export const customerProfileQuery = (userId: string | null, email: string | null
     staleTime: 60_000,
   });
 
-/* ------------------------------------------------------------ conversations */
+// ------------------------------------------------------------- conversations
 
 export async function ensureConversation(input: {
   conversationId: string;
@@ -165,18 +147,19 @@ export async function ensureConversation(input: {
   if (error) throw new Error(error.message);
 }
 
-export async function fetchMyConversations(customerId: string): Promise<CustomerConversation[]> {
+export async function fetchMyConversations(customerId: string, limit = 200): Promise<CustomerConversation[]> {
   const [convos, turns] = await Promise.all([
     supabase
       .from("customer_conversations")
       .select("conversation_id, tenant_id, customer_id, title, created_at, last_activity")
       .eq("customer_id", customerId)
-      .order("last_activity", { ascending: false }),
+      .order("last_activity", { ascending: false })
+      .limit(limit),
     supabase
       .from("conversation_turns")
       .select(TURN_COLUMNS)
       .order("timestamp", { ascending: true })
-      .limit(1000),
+      .limit(limit * 10),
   ]);
   if (convos.error) throw new Error(convos.error.message);
   if (turns.error) throw new Error(turns.error.message);
@@ -208,7 +191,7 @@ export const myConversationsQuery = (customerId: string | null) =>
     staleTime: 10_000,
   });
 
-/* --------------------------------------------------------------- transcript */
+// ---------------------------------------------------------------- transcript
 
 async function signAttachments(rows: Omit<ChatAttachment, "url">[]): Promise<ChatAttachment[]> {
   return Promise.all(
@@ -226,15 +209,12 @@ export async function signedAttachmentUrl(storagePath: string): Promise<string |
   return data?.signedUrl ?? null;
 }
 
-/** Restores a conversation from Supabase: turns plus their stored attachments. */
 export async function fetchConversationMessages(conversationId: string): Promise<ChatMessage[]> {
   const [turnsResult, attachmentsResult] = await Promise.all([
     supabase
       .from("conversation_turns")
       .select(TURN_COLUMNS)
       .eq("conversation_id", conversationId)
-      // turn_id is the backend's insertion sequence: the only fully reliable
-      // chronological key when two turns of a round share a timestamp.
       .order("turn_id", { ascending: true }),
     supabase
       .from("conversation_attachments")
@@ -258,8 +238,6 @@ export async function fetchConversationMessages(conversationId: string): Promise
     attachments: [],
   }));
 
-
-  // Attach each stored file to the customer message it was sent with (closest in time).
   for (const attachment of attachments) {
     const at = new Date(attachment.created_at).getTime();
     let target: ChatMessage | undefined;
@@ -295,10 +273,11 @@ export const conversationMessagesQuery = (conversationId: string | null, enabled
     staleTime: 5_000,
   });
 
-/* -------------------------------------------------------------- attachments */
+// --------------------------------------------------------------- attachments
 
 export function validateAttachment(file: File): string | null {
-  if (!ATTACHMENT_MIME_TYPES.includes(file.type)) {
+  const mime = file.type.toLowerCase();
+  if (!ALLOWED_MIME_TYPES.includes(mime)) {
     return "Please attach a PNG, JPG or WEBP image.";
   }
   if (file.size > ATTACHMENT_MAX_BYTES) {
@@ -307,7 +286,6 @@ export function validateAttachment(file: File): string | null {
   return null;
 }
 
-/** Uploads a screenshot to private storage and records its metadata row. */
 export async function uploadAttachment(input: {
   file: File;
   tenantId: string;
@@ -343,7 +321,7 @@ export async function uploadAttachment(input: {
   };
 }
 
-/* -------------------------------------------------------------- send to n8n */
+// -------------------------------------------------------------- send to n8n
 
 function pickResponse(raw: unknown): Record<string, unknown> {
   const value = Array.isArray(raw) ? raw[0] : raw;
@@ -366,10 +344,6 @@ function readOutcome(body: Record<string, unknown>): ChatOutcome {
   return { kind: "answered" };
 }
 
-/**
- * Sends one logical customer message (text and/or screenshots) to the n8n
- * workflow. Resolves only once the backend has actually responded.
- */
 export async function sendChatMessage(input: {
   tenantId: string;
   customerId: string;
