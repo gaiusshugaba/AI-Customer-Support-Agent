@@ -1,0 +1,149 @@
+{
+  "name": "ai customer support errors",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        224,
+        128
+      ],
+      "id": "7d45b084-560a-4913-a871-33f29cb72f06",
+      "name": "[ERROR] - Workflow Error Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const error = $json;\n\nconst execution = error.execution || {};\nconst workflow  = error.workflow  || {};\n\n// Try to find tenant_id anywhere in the failed execution's run data\nlet tenant_id = 'b2b-saas-demo';\ntry {\n  const runData =\n    execution.data?.resultData?.runData ||\n    execution.data?.runData ||\n    {};\n\n  for (const nodeName of Object.keys(runData)) {\n    const runs = runData[nodeName];\n    if (!Array.isArray(runs)) continue;\n\n    for (const run of runs) {\n      const items = run?.data?.main?.[0] || [];\n      for (const item of items) {\n        const j = item?.json || {};\n        if (j.tenant_id) { tenant_id = j.tenant_id; break; }\n        if (j.body?.tenant_id) { tenant_id = j.body.tenant_id; break; }\n      }\n      if (tenant_id !== 'b2b-saas-demo') break;\n    }\n    if (tenant_id !== 'b2b-saas-demo') break;\n  }\n} catch (_) {\n  // fall back to default tenant\n}\n\nreturn [{\n  json: {\n    tenant_id,\n    status: 'failed',\n    workflow_name: workflow.name || 'Unknown workflow',\n    execution_id: execution.id ? String(execution.id) : '',\n    execution_url: execution.url || '',\n    failed_node: execution.lastNodeExecuted || 'Unknown node',\n    error_message:\n      execution.error?.message ||\n      error.error?.message ||\n      'Unknown error',\n    error_stack:\n      execution.error?.stack ||\n      error.error?.stack ||\n      null,\n    occurred_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        128
+      ],
+      "id": "5ab38346-9525-4af7-bdb2-399d205df5bb",
+      "name": "[ERROR] - Normalize Workflow Error"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nreturn {\n  json: {\n    ...data,\n\n    stage: data.failed_node || 'unknown',\n\n    severity: 'error',\n\n    error_type: 'workflow_failure'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        128
+      ],
+      "id": "4edbbe67-f46e-437f-bcd0-43c15dd5f7c8",
+      "name": "[ERROR] - Prepare Workflow Error Log"
+    },
+    {
+      "parameters": {
+        "tableId": "request_errors",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "tenant_id",
+              "fieldValue": "={{ $json.tenant_id }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $json.error_message }}"
+            },
+            {
+              "fieldId": "failed_node",
+              "fieldValue": "={{ $json.failed_node }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "occurred_at",
+              "fieldValue": "={{ $json.occurred_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        896,
+        128
+      ],
+      "id": "2490bfd9-769b-430c-9983-ed14379c5314",
+      "name": "[ERROR] - Save Workflow Error",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AWapg2iswUxnGF2X",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "ERROR HANDLING + OBSERVABILITY\n\nPurpose:\nMake failures visible, structured and traceable.\n\nCaptures:\n• tenant\n• error message\n• failed node\n• status\n• timestamp\n\nFailure types:\n• invalid request\n• extraction failure\n• validation failure\n• database failure\n• workflow failure\n\nPrinciple:\nNo silent failures.",
+        "height": 416,
+        "width": 1216,
+        "color": "#492222"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -128,
+        16
+      ],
+      "typeVersion": 1,
+      "id": "58fd0d98-13ec-45e1-9e78-2d7b98c795c3",
+      "name": "Sticky Note17"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "[ERROR] - Workflow Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "[ERROR] - Normalize Workflow Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ERROR] - Normalize Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "[ERROR] - Prepare Workflow Error Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ERROR] - Prepare Workflow Error Log": {
+      "main": [
+        [
+          {
+            "node": "[ERROR] - Save Workflow Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6f989862-871c-4d98-90b3-2eed17c942a5",
+  "meta": {
+    "instanceId": "797e1d7f5c66ac05aca3e1235fdd862ac6b84011015dc4a03bdfe55d9f3791ca"
+  },
+  "nodeGroups": [],
+  "id": "kwVv4CN524k2URvN",
+  "tags": []
+}

@@ -2,7 +2,7 @@
 
 This document describes the architectural framework, data flow pipelines, and decision matrices powering the FlowStack AI Customer Support Platform.
 
----
+\---
 
 ## The Three Core Models
 
@@ -11,20 +11,20 @@ This document describes the architectural framework, data flow pipelines, and de
 │                           1. IDENTITY MODEL                             │
 │                                                                         │
 │  TENANT (Isolation Boundary)                                            │
-│  └── CUSTOMER (Persistent Entity: email, plan_tier, custom_fields)      │
-│      └── CONVERSATION (Unique Session: conversation_id)                 │
+│  └── CUSTOMER (Persistent Entity: email, plan\_tier, custom\_fields)      │
+│      └── CONVERSATION (Unique Session: conversation\_id)                 │
 │          └── ESCALATION CASE (Created only when escalation is required) │
 │                                                                         │
-│  Rule: customer_id ≠ conversation_id ≠ case_id                          │
+│  Rule: customer\_id ≠ conversation\_id ≠ case\_id                          │
 └─────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                            2. MEMORY MODEL                              │
 │                                                                         │
 │  CUSTOMER MEMORY        CONVERSATION MEMORY       CASE STATE            │
-│  (Supabase: customers)  (conversation_turns)      (escalation_cases)    │
+│  (Supabase: customers)  (conversation\_turns)      (escalation\_cases)    │
 │  • Account Plan Tier    • Chronological Turns     • Missing Info List   │
-│  • Account Status       • Intent & AI Scores      • Case Ready Flag     │
+│  • Account Status       • Intent \& AI Scores      • Case Ready Flag     │
 │  • Entitlements         • Role (user/assistant)   • Handoff Mode        │
 └─────────────────────────────────────────────────────────────────────────┘
 
@@ -37,146 +37,166 @@ This document describes the architectural framework, data flow pipelines, and de
 │  Classify Intent ──► Retrieve Vectors ──► Grounded Generation           │
 │                              │                                          │
 │                              ▼                                          │
-│  Deterministic Guardrails ──► [Score >= Thresh] ──► Respond Directly    │
+│  Deterministic Guardrails ──► \[Score >= Thresh] ──► Respond Directly    │
 │                              │                                          │
-│                              ▼ [Risk Flag / Low Score]                  │
-│                        Escalate & Intake Case                           │
+│                              ▼ \[Risk Flag / Low Score]                  │
+│                        Escalate \& Intake Case                           │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+\---
 
 ## Ingestion Pipeline Architecture
 
 ```
-Lovable Frontend / Admin Console
-       │
-       ▼
-multipart/form-data POST /webhook/kb-ingest
-       │
-       ▼
-[INGEST] - Receive Document
-       │
-       ▼
-[INGEST] - Unwrap Request  (preserves $binary)
-       │
-       ▼
-[INGEST] - Route File Type  (string-equality comparison: 'pdf' vs md/txt/csv)
-    ┌────┴────┐
-    │         │
-   PDF        MD/TXT
-    │         │
-    ▼         ▼
-Extract PDF  Extract Markdown
-    │         │
-    └────┬────┘
-         ▼
-[INGEST] - Normalize Document  (parses text metadata headers, normalizes extracted_text, resolves file_type)
-         │
-         ▼
-[INGEST] - Check Previous Ingestion  (Supabase: ingestion_log, status=success)
-         │
-    ┌────┴────────────────────────────┐
-    │ Exists                          │ New Document
-    ▼                                 ▼
-Delete Existing Vectors           (skip deletion)
-    │
-    ▼
-Restore Document Context
-    │
-    └────────┬────────────────────────┘
-             ▼
-[INGEST] - Validate Extracted Text  (non-empty gate)
-             │
-             ▼
-[INGEST] - Chunk Document           (header-aware, ~400-token target, ~50-token overlap)
-             │
-             ▼
-[INGEST] - Validate Chunks          (count > 0 gate)
-             │
-             ▼
-[INGEST] - Index Knowledge          (Gemini 3072-dim → Pinecone namespace = tenant_id)
-             │
-             ▼
-[INGEST] - Build Ingestion Result
-             │
-             ▼
-[INGEST] - Log Ingestion Run        (Supabase: ingestion_log)
-             │
-             ▼
-[INGEST] - Respond                  (JSON.stringify({ status: "ok", doc_id, chunks_indexed }))
-```
+Switch  (string-equality on file extension: 'pdf' / 'docx' / 'md')
 
----
+&#x20;   ┌────┬────┬─────┐
+
+&#x20;   │    │    │     │
+
+&#x20;  PDF  DOCX  MD   (default)
+
+&#x20;   │    │    │     │
+
+&#x20;   ▼    ▼    ▼     ▼
+
+&#x20; Extract text via format-specific extractor
+
+&#x20;   │    │    │     │
+
+&#x20;   └────┴────┴─────┘
+
+&#x20;        ▼
+
+\[INGEST] - Normalize Document  (parses - Key: Value metadata headers, normalizes extracted\_text, resolves file\_type, generates clean doc\_id)
+
+&#x20;        │
+
+&#x20;        ▼
+
+\[INGEST] - Check Previous Ingestion  (Supabase: ingestion\_log, status=success)
+
+&#x20;        │
+
+&#x20;   ┌────┴────────────────────────────┐
+
+&#x20;   │ Exists                          │ New Document
+
+&#x20;   ▼                                 ▼
+
+Delete Existing Vectors           (skip deletion)
+
+&#x20;   │
+
+&#x20;   ▼
+
+Restore Document Context
+
+&#x20;   │
+
+&#x20;   └────────┬────────────────────────┘
+
+&#x20;            ▼
+
+\[INGEST] - Validate Extracted Text  (non-empty gate)
+
+&#x20;            │
+
+&#x20;            ▼
+
+\[INGEST] - Chunk Document
+
+&#x20;  ├─ Markdown strategy: split on #/##/###
+
+&#x20;  ├─ Heuristic strategy: detect headings via short-line / question-word rules
+
+&#x20;  ├─ Skip sections < MIN\_CHARS (100)
+
+&#x20;  ├─ Skip 'Document metadata' section
+
+&#x20;  └─ Emit chunk with `text` = "title — heading\\n\\nbody"
+
+&#x20;            │
+
+&#x20;            ▼
+
+\[INGEST] - Validate Chunks          (count > 0 gate)
+
+&#x20;            │
+
+&#x20;            ▼
+
+\[INGEST] - Index Knowledge          (OpenAI text-embedding-3-large, 3072-dim → Pinecone namespace = tenant\_id)---
 
 ## Live Chat Pipeline
 
 ```
-[CHAT] - Receive Message (POST /webhook/conversation-message)
+\[CHAT] - Receive Message (POST /webhook/conversation-message)
        │
        ▼
-[CHAT] - Unwrap Request              (extract $json.body)
+\[CHAT] - Unwrap Request              (extract $json.body)
        │
        ▼
-[CHAT] - Validate Message            (tenant_id, customer_id, conversation_id, non-empty text)
+\[CHAT] - Validate Message            (tenant\_id, customer\_id, conversation\_id, non-empty text)
        │
        ├────────────────────── Invalid ──► Log + Respond Validation Error
        ▼
-[CHAT] - Load Tenant Config ──► Load Customer Context ──► Load Conversation History  (serial chain)
+\[CHAT] - Load Tenant Config ──► Load Customer Context ──► Load Conversation History  (serial chain)
        │
        ▼
-[CHAT] - Build Conversation Context  (merge: message + tenant_config + customer_context + history)
+\[CHAT] - Build Conversation Context  (merge: message + tenant\_config + customer\_context + history)
        │
        ├──────────────────────────────────────────────┐
        ▼                                              ▼
-Write User Turn (Supabase)                [ESCALATION] - Check Active Case
+Write User Turn (Supabase)                \[ESCALATION] - Check Active Case
                                                      │
                                                      ▼
-                                            [ESCALATION] - Evaluate Active Case
+                                            \[ESCALATION] - Evaluate Active Case
                                                      │
                                                      ▼
-                                            [ESCALATION] - Route Active Case Follow-Up
+                                            \[ESCALATION] - Route Active Case Follow-Up
                                             ┌────────────┴────────────┐
                                             │ Active Case Exists      │ No Active Case /
-                                            │ & Message Relevant      │ Standard Query
+                                            │ \& Message Relevant      │ Standard Query
                                             ▼                         ▼
-                                  [CASE FOLLOW-UP PATH]      [RAG] - Build Intent Prompt
+                                  \[CASE FOLLOW-UP PATH]      \[RAG] - Build Intent Prompt
                                                                         │
                                                                         ▼
-                                                               [RAG] - Classify Intent (Structured Output)
+                                                               \[RAG] - Classify Intent (Structured Output)
                                                                         │
                                                                         ▼
-                                                               [RAG] - Extract Intent Signals
+                                                               \[RAG] - Extract Intent Signals
                                                                         │
                                                                         ▼
-                                                               [RAG] - Retrieve Knowledge (Pinecone, tenant namespace)
+                                                               \[RAG] - Retrieve Knowledge (Pinecone, tenant namespace)
                                                                         │
                                                                         ▼
-                                                               [RAG] - Build Retrieved Context
+                                                               \[RAG] - Build Retrieved Context
                                                                         │
                                                                         ▼
-                                                               [RAG] - Validate Retrieval
+                                                               \[RAG] - Validate Retrieval
                                                                 ┌───────┴───────┐
                                                                 │ Score > 0     │ No Relevant Context
                                                                 ▼               ▼
-                                                        [RAG] - Build    [RAG] - Handle No
+                                                        \[RAG] - Build    \[RAG] - Handle No
                                                         Response Prompt  Knowledge Found
                                                                 │               │
                                                                 ▼               │
-                                                        [RAG] - Generate        │
+                                                        \[RAG] - Generate        │
                                                         Response                │
                                                                 │               │
                                                                 ▼               ▼
-                                                        [RAG] - Score    [GUARDRAIL] - Prepare
+                                                        \[RAG] - Score    \[GUARDRAIL] - Prepare
                                                         Response          Decision Context
                                                                 │               │
                                                                 └───────┬───────┘
                                                                         ▼
-                                                               [GUARDRAIL] - Check Risk
+                                                               \[GUARDRAIL] - Check Risk
                                                                 ┌───────┴───────┐
                                                                 │ Risk Flags    │ No Risk Flags
                                                                 ▼               ▼
-                                                        Prepare Risk    [GUARDRAIL] - Check
+                                                        Prepare Risk    \[GUARDRAIL] - Check
                                                         Escalation      Account Context
                                                                         ┌───────┴───────┐
                                                                         │ Req Account   │ Normal
@@ -186,13 +206,13 @@ Write User Turn (Supabase)                [ESCALATION] - Check Active Case
                                                                         │               │
                                                                         └───────┬───────┘
                                                                                 ▼
-                                                                        [GUARDRAIL] - Build
+                                                                        \[GUARDRAIL] - Build
                                                                         Decision Result
                                                                                 │
                                                                  ┌──────────────┴──────────────┐
                                                                  │ Decision == 'escalate'      │ Decision == 'respond'
                                                                  ▼                             ▼
-                                                        [ESCALATION INTAKE]           Save Assistant Turn
+                                                        \[ESCALATION INTAKE]           Save Assistant Turn
                                                         ──────────────────            Deliver Customer Response
                                                         Build Case Context
                                                         Build Requirements Prompt
@@ -202,41 +222,42 @@ Write User Turn (Supabase)                [ESCALATION] - Check Active Case
                                                         Generate Customer Response
 ```
 
----
+\---
 
 ## Guardrail Decision Matrix
 
-| Condition | Primary Signal | Outcome | Action / Response Type |
-|---|---|---|---|
-| **Security Threat** | `risk_flags` contains `"security"` | `ESCALATE` | Intakes account incident safely (no credentials requested) |
-| **Billing Dispute** | `risk_flags` contains `"billing_dispute"` | `ESCALATE` | Requests transaction dates, amounts, and invoice references |
-| **Legal / Churn** | `risk_flags` contains `"legal"` or `"churn_threat"` | `ESCALATE` | Logs high-priority handoff ticket |
-| **Missing Account Info** | `requires_account_context: true` & profile data missing | `ESCALATE` | Intakes account verification details |
-| **Low Retrieval Score** | Vector similarity below tenant threshold | `ESCALATE` | Honest fallback; escalates without hallucinating |
-| **Standard Policy Query** | High similarity, no risk flags | `RESPOND` | Generates response grounded strictly in retrieved context |
+|Condition|Primary Signal|Outcome|Action / Response Type|
+|-|-|-|-|
+|**Security Threat**|`risk\_flags` contains `"security"`|`ESCALATE`|Intakes account incident safely (no credentials requested)|
+|**Billing Dispute**|`risk\_flags` contains `"billing\_dispute"`|`ESCALATE`|Requests transaction dates, amounts, and invoice references|
+|**Legal / Churn**|`risk\_flags` contains `"legal"` or `"churn\_threat"`|`ESCALATE`|Logs high-priority handoff ticket|
+|**Missing Account Info**|`requires\_account\_context: true` \& profile data missing|`ESCALATE`|Intakes account verification details|
+|**Low Retrieval Score**|Vector similarity below tenant threshold|`ESCALATE`|Honest fallback; escalates without hallucinating|
+|**Standard Policy Query**|High similarity, no risk flags|`RESPOND`|Generates response grounded strictly in retrieved context|
 
----
+\---
 
-## Error Handling & Observability
+## Error Handling \& Observability
 
-Every failure path writes a structured record to `request_errors` (or `ingestion_log` for ingestion failures):
+Every failure path writes a structured record to `request\_errors` (or `ingestion\_log` for ingestion failures):
 
 ```json
 {
-  "tenant_id": "b2b-saas-demo",
-  "error_message": "Document contains no extractable text.",
-  "failed_node": "Validate Extracted Text",
+  "tenant\_id": "b2b-saas-demo",
+  "error\_message": "Document contains no extractable text.",
+  "failed\_node": "Validate Extracted Text",
   "status": "failed",
-  "occurred_at": "2026-08-27T14:32:10.421Z"
+  "occurred\_at": "2026-08-27T14:32:10.421Z"
 }
 ```
 
 Failure types: invalid request, extraction failure, validation failure, database failure, workflow failure. The workflow's Error Trigger normalizes any unhandled error into the same schema — one place to check when something breaks.
 
----
+\---
 
 ## Multi-Tenant Isolation
 
-- **Pinecone:** every vector is inserted/queried within `namespace = tenant_id`. Retrieval is physically scoped at the API layer.
-- **Supabase:** all `conversation_turns`, `escalation_cases`, and `ingestion_log` queries filter by `tenant_id`. `customers` and `tenant_config` are keyed by `tenant_id`.
-- **Context:** the classifier's allowed category list is derived from `tenant_config.industry_pack` (`saas` vs `ecommerce`), keeping industry vocabulary data-driven rather than hardcoded per vertical.
+* **Pinecone:** every vector is inserted/queried within `namespace = tenant\_id`. Retrieval is physically scoped at the API layer.
+* **Supabase:** all `conversation\_turns`, `escalation\_cases`, and `ingestion\_log` queries filter by `tenant\_id`. `customers` and `tenant\_config` are keyed by `tenant\_id`.
+* **Context:** the classifier's allowed category list is derived from `tenant\_config.industry\_pack` (`saas` vs `ecommerce`), keeping industry vocabulary data-driven rather than hardcoded per vertical.
+

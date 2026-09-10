@@ -1,0 +1,1 @@
+import{N as e,t}from"./client-BFwoDd46.js";async function n(e){let{data:n,error:r}=await t.from(`customers`).select(`customer_id, tenant_id, email, name, plan_tier, account_status, custom_fields`).eq(`customer_id`,e).limit(1);return r?null:(n??[])[0]??null}var r=t=>e({queryKey:[`customer`,t],queryFn:()=>t?n(t):Promise.resolve(null),enabled:!!t,staleTime:6e4});export{r as t};

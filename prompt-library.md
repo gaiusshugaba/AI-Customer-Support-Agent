@@ -2,9 +2,7 @@
 
 Every prompt template actually running in the current build, extracted verbatim from the `[Core] AI Customer Support Platform` workflow's Code nodes (not reconstructed from memory or docs — pulled directly from the exported workflow JSON). Where a template has changed since an earlier version documented elsewhere in this repo (e.g. `docs/n8n-build-guide.md`), **this file reflects the current, running version.**
 
-Six prompts total: two in the `[RAG]` path (every conversation turn), four in the `[ESCALATION]` path (only when a case is active).
-
----
+Six LLM prompts total: two in the `[RAG]` path (every conversation turn), four in the `[ESCALATION]` path (only when a case is active). A seventh path — the **fast path** — deliberately skips the LLM entirely for trivially-short messages and returns a canned response, so it has no prompt.S---
 
 ## How to read each entry
 
@@ -19,7 +17,7 @@ Six prompts total: two in the `[RAG]` path (every conversation turn), four in th
 
 **Node:** `[RAG] - Build Intent Prompt`
 **Consumed by:** `[RAG] - Classify Intent` (LLM Chain, structured output — returns `{ intent, risk_flags, requires_account_context }`)
-**Runs:** every conversation turn, first step after context is loaded.
+**Runs:** **Runs:** every conversation turn, **except** those intercepted by `[RAG] - Is Trivial Message?` (short messages with no intent/risk keywords skip the classifier entirely).
 **Inputs:** `tenant_config.industry_pack` (determines allowed category list), `conversation_history`, `text` (customer's latest message).
 
 ```

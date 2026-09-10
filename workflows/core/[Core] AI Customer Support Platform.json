@@ -8,8 +8,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3120,
-        448
+        3136,
+        128
       ],
       "id": "80a1ac75-401d-4835-bfd4-d507a8a5f22b",
       "name": "Prepare Validation Error"
@@ -99,7 +99,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        9872,
+        10256,
         2240
       ],
       "id": "064846f2-e3ce-4f6f-9f31-bffc6d511a87",
@@ -114,12 +114,12 @@
     },
     {
       "parameters": {
-        "jsCode": "const err = $json.error?.message || 'Unknown Supabase write error';\nconst tenant_id = $json.tenant_id || 'unknown';\n\nreturn [{\n  json: {\n    tenant_id,\n    error_message: err,\n    failed_node: $node.name,\n    status: 'failed',\n    occurred_at: new Date().toISOString()\n  }\n}];"
+        "jsCode": "// $json here is the ERROR output from the failed node\n// (Write User Turn or MEMORY - Save Assistant Turn)\nconst err = $json.error?.message || 'Unknown Supabase write error';\n\n// Grab context from upstream\nconst upstream =\n  $('[CHAT] - Build Conversation Context').first()?.json || {};\n\nreturn [{\n  json: {\n    tenant_id: upstream.tenant_id || 'b2b-saas-demo',\n    conversation_id: upstream.conversation_id || '',\n    failed_node:\n      $json.error?.node?.name ||     // actual failed node, if provided\n      'supabase_write',\n    error_message: err,\n    status: 'failed',\n    occurred_at: new Date().toISOString()\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        10176,
+        10560,
         2000
       ],
       "id": "6e7e94e4-2cda-400e-8b05-958d9a4218a6",
@@ -156,7 +156,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        10368,
+        10752,
         2000
       ],
       "id": "4bb570f6-0475-4d3c-b139-f06db9300fd3",
@@ -170,7 +170,7 @@
     },
     {
       "parameters": {
-        "jsCode": "return [{\n  json: {\n    tenant_id: $json.tenant_id || 'unknown',\n    error_message: 'Missing required field: tenant_id, conversation_id, or text',\n    failed_node: 'Validate Input',\n    status: 'failed',\n    occurred_at: new Date().toISOString()\n  }\n}];"
+        "jsCode": "return [{\n  json: {\n    tenant_id: $json.tenant_id || 'b2b-saas-demo',\n    error_message: 'Missing required field: tenant_id, conversation_id, or text',\n    failed_node: 'Validate Input',\n    status: 'failed',\n    occurred_at: new Date().toISOString()\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -191,8 +191,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -320,
-        160
+        -304,
+        -160
       ],
       "id": "08d8e03c-1445-46a5-aa49-597a5aa6d4d9",
       "name": "[INGEST] - Receive Document",
@@ -205,8 +205,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -96,
-        160
+        -80,
+        -160
       ],
       "id": "bf64575d-1ba8-4d73-8f43-f381448778f7",
       "name": "[INGEST] - Unwrap Request"
@@ -218,7 +218,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5664,
+        6048,
         1792
       ],
       "id": "342c29da-bc5d-487c-9f83-afe0f1eb68af",
@@ -252,7 +252,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        5824,
+        6208,
         1792
       ],
       "id": "d4d1611e-63eb-49c6-b700-6853a7000c1d",
@@ -265,7 +265,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6688,
+        7072,
         1280
       ],
       "id": "68300b4c-521e-4033-aeb2-5bfdedba61e1",
@@ -283,7 +283,7 @@
           "conditions": [
             {
               "id": "065d2187-fa1b-430d-950c-567eaa45676f",
-              "leftValue": "={{\n  Boolean($json.retrieved_context) &&\n  $json.retrieved_context.trim().length > 0 &&\n  Number($json.retrieval_score || 0) > 0\n}}",
+              "leftValue": "={{ $json.retrieval_score > 0 && $json.retrieved_context && $json.retrieved_context.trim().length > 0 }}",
               "rightValue": "={{ $json.decision_context.similarity_threshold }}",
               "operator": {
                 "type": "boolean",
@@ -299,7 +299,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        6464,
+        6848,
         1648
       ],
       "id": "ce669b17-00cd-4e6b-87e3-1c1f74892a44",
@@ -312,7 +312,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6688,
+        7072,
         1824
       ],
       "id": "43facb35-90fa-4262-8f0b-aba6a6a7252d",
@@ -325,7 +325,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6688,
+        7072,
         1472
       ],
       "id": "72e6f680-65a1-447a-a42e-3749b67065a5",
@@ -338,7 +338,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6912,
+        7296,
         1648
       ],
       "id": "65312479-0f05-42e1-b0f2-2e6e3e496ee4",
@@ -351,7 +351,7 @@
           "fieldValues": [
             {
               "fieldId": "conversation_id",
-              "fieldValue": "={{ $json.conversation_id }}{{ $('[ESCALATION] - Build Follow-Up Response Prompt').item.json.conversation_id }}"
+              "fieldValue": "={{ $json.conversation_id }}"
             },
             {
               "fieldId": "tenant_id",
@@ -383,7 +383,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        9984,
+        10368,
         1808
       ],
       "id": "7b342bb5-d9f6-49e0-b563-be575cb6495d",
@@ -403,7 +403,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        10176,
+        10560,
         1712
       ],
       "id": "4907a21b-5c17-4024-b0e3-91d5ede69998",
@@ -416,7 +416,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        10368,
+        10752,
         1712
       ],
       "id": "e5cd891b-656d-4f0b-9d01-6419cb20b605",
@@ -504,8 +504,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        352,
-        1760
+        672,
+        1984
       ],
       "id": "e034cf3f-7d78-4098-a19a-9d52b2867ba2",
       "name": "[CHAT] - Load Tenant Config",
@@ -541,8 +541,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        576,
-        1760
+        672,
+        1808
       ],
       "id": "37450dfc-e30a-4ee1-b361-8731a109ea89",
       "name": "[CHAT] - Load Customer Context",
@@ -579,8 +579,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        784,
-        1760
+        672,
+        1648
       ],
       "id": "a4e519a6-9c6f-459a-8464-ff31c2ec2c36",
       "name": "[CHAT] - Load Conversation History",
@@ -599,11 +599,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1008,
+        1392,
         1760
       ],
       "id": "37976df6-cba6-4432-b534-6e19f891bbf0",
-      "name": "[CHAT] - Build Conversation Context"
+      "name": "[CHAT] - Build Conversation Context",
+      "executeOnce": false
     },
     {
       "parameters": {
@@ -612,7 +613,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1936,
+        2464,
         1840
       ],
       "id": "37855c11-b300-4389-bcd5-52ca70805ad7",
@@ -628,7 +629,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        2080,
+        2608,
         1840
       ],
       "id": "56d2b021-19c8-4b6c-bc08-c984821f95a4",
@@ -642,7 +643,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2432,
+        2944,
         1840
       ],
       "id": "4ee33345-2989-4f66-9414-8111963a8085",
@@ -665,7 +666,7 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
       "typeVersion": 1.3,
       "position": [
-        3968,
+        4352,
         1648
       ],
       "id": "d528030d-eb9d-4736-b85f-9fb00a2c4a14",
@@ -684,28 +685,11 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        2256,
+        2784,
         1984
       ],
       "id": "8a39a872-1a53-448d-9f19-e4b8535ff07c",
       "name": "[RAG] - Parse Intent Output"
-    },
-    {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        4048,
-        1872
-      ],
-      "id": "f485c747-e516-4bf4-962b-90f2cb6acd4d",
-      "name": "[RAG] - Gemini Query Embeddings",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "b86t9ijdbERxzXBC",
-          "name": "Google Gemini(PaLM) Api account 2"
-        }
-      }
     },
     {
       "parameters": {
@@ -714,7 +698,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4320,
+        4704,
         1648
       ],
       "id": "00deb87f-6b20-48b2-babe-0a5a1645c218",
@@ -748,7 +732,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        4544,
+        4928,
         1648
       ],
       "id": "b06df0ff-9a74-4402-9f8c-9e4a879c593c",
@@ -761,7 +745,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4880,
+        5264,
         1744
       ],
       "id": "6d734351-2ee0-45ce-8110-6461972d28c9",
@@ -776,7 +760,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        5056,
+        5440,
         1744
       ],
       "id": "66693906-ebd4-4a23-85a0-72f170c0ff74",
@@ -789,7 +773,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5376,
+        5760,
         1744
       ],
       "id": "67885e86-38e9-43e4-bf41-2cdbb1ad115c",
@@ -802,46 +786,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5328,
+        5712,
         1968
       ],
       "id": "a0276079-63b3-46ea-bdce-145bc0ba3c8c",
       "name": "[RAG] - Handle No Knowledge Found"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "7fc28c57-0c6d-4a53-80c7-d05fcd4dffed",
-              "leftValue": "=={{ ($binary.file?.fileExtension || '').toLowerCase() }}",
-              "rightValue": "pdf",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "looseTypeValidation": true,
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        128,
-        160
-      ],
-      "id": "e230ee34-e5bb-4ad1-acba-6e2f4f7f55b5",
-      "name": "[INGEST] - Route File Type",
-      "retryOnFail": true
     },
     {
       "parameters": {
@@ -852,8 +801,8 @@
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1.1,
       "position": [
-        352,
-        64
+        368,
+        -272
       ],
       "id": "991e7e66-d379-468d-a407-f0c81f354fdb",
       "name": "[INGEST] - Extract PDF Text"
@@ -865,8 +814,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        352,
-        256
+        368,
+        32
       ],
       "id": "2909029c-96ea-4f98-b313-b25faace9236",
       "name": "[INGEST] - Extract Markdown Text",
@@ -874,13 +823,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const source = $json;\nconst file = $binary?.file || {};\nconst fileName = file.fileName || '';\n\n// ── 1. Normalize text field (PDF outputs 'text', Markdown outputs 'extracted_text') ──\nconst extractedText = source.extracted_text || source.text || '';\n\n// ── 2. Parse metadata from the text content ──\nfunction parseTextMeta(text) {\n  if (!text) return {};\n  const meta = {};\n  \n  const docIdMatch = text.match(/Document ID\\s+([^\\n]+)/i);\n  if (docIdMatch) meta.doc_id = docIdMatch[1].trim();\n  \n  const tenantMatch = text.match(/Tenant\\s+([^\\n]+)/i);\n  if (tenantMatch) meta.tenant_id = tenantMatch[1].trim();\n  \n  const categoryMatch = text.match(/Category\\s+([^\\n]+)/i);\n  if (categoryMatch) meta.category = categoryMatch[1].trim();\n  \n  const versionMatch = text.match(/Version\\s+([^\\n]+)/i);\n  if (versionMatch) meta.version = versionMatch[1].trim();\n  \n  const updatedMatch = text.match(/Last Updated\\s+([^\\n]+)/i);\n  if (updatedMatch) meta.last_updated = updatedMatch[1].trim();\n  \n  const lines = text.split('\\n').map(l => l.trim()).filter(l => l.length > 0);\n  if (lines.length > 0) meta.title = lines[0];\n  \n  return meta;\n}\n\nconst textMeta = parseTextMeta(extractedText);\n\n// ── 3. Parse filename as fallback ──\nconst baseName = fileName.replace(/\\.[^.]+$/, '');\nconst nameParts = baseName.split('_');\nconst filenameTenantId = nameParts[0] || '';\nconst filenameDocId = nameParts[1] || '';\nconst filenameTitle = nameParts.slice(2).join('_')\n  .replace(/[-_]+/g, ' ')\n  .replace(/\\b\\w/g, c => c.toUpperCase());\n\n// ── 4. Resolve file type robustly ──\nconst rawExtension = file.fileExtension || '';\nconst fromFileName = (file.fileName || '').split('.').pop() || '';\nconst fromMimeType = (file.mimeType || '').includes('pdf') ? 'pdf' \n                   : (file.mimeType || '').includes('markdown') ? 'md'\n                   : (file.mimeType || '').includes('text') ? 'txt'\n                   : '';\n\nconst fileType = (source.file_type || rawExtension || fromFileName || fromMimeType).toLowerCase();\n\n// ── 5. Resolve IDs and metadata ──\nconst tenant_id = textMeta.tenant_id || source.tenant_id || filenameTenantId || '';\nconst doc_id = textMeta.doc_id || source.doc_id || filenameDocId || '';\nconst title = textMeta.title || source.title || filenameTitle || 'Untitled Document';\nconst category = textMeta.category || source.category || 'general';\nconst version = textMeta.version || source.version || '1.0';\nconst last_updated = textMeta.last_updated || source.last_updated || new Date().toISOString().slice(0, 10);\n\n// ── 6. Build clean doc_id if still missing ──\nconst finalDocId = doc_id || `doc-${baseName.replace(/\\s+/g, '-').toLowerCase()}-${Date.now().toString(36).slice(-4)}`;\n\nreturn [{\n  json: {\n    ...source,\n    extracted_text: extractedText,\n    tenant_id,\n    doc_id: finalDocId,\n    title,\n    file_type: fileType,\n    industry_pack: source.industry_pack || 'saas',\n    category,\n    version,\n    last_updated\n  },\n  binary: $binary\n}];"
+        "jsCode": "const source = $json;\nconst file = $binary?.file || {};\nconst fileName = file.fileName || '';\n\n// ── 1. Normalize text field ──\nconst extractedText = source.extracted_text || source.text || '';\n\n// ── 2. Parse metadata from document body ──\nfunction parseTextMeta(text) {\n  if (!text) return {};\n  const meta = {};\n\n  const extract = (label) => {\n    const regex = new RegExp(\n      `(?:^|\\\\n)\\\\s*[-•|]?\\\\s*${label}\\\\s*:?\\\\s*([^\\\\n|]+)`,\n      'i'\n    );\n    const match = text.match(regex);\n    return match ? match[1].trim() : undefined;\n  };\n\n  meta.doc_id = extract('Document ID');\n  meta.tenant_id = extract('Tenant');\n  meta.category = extract('Category');\n  meta.version = extract('Version');\n  meta.last_updated = extract('Last Updated');\n  meta.title = extract('Title');\n\n  // Fallback: first non-empty, non-metadata, non-heading line\n  if (!meta.title) {\n    const lines = text\n      .split('\\n')\n      .map(l => l.trim())\n      .filter(l =>\n        l.length > 0 &&\n        !l.startsWith('|') &&\n        !l.startsWith('-') &&\n        !l.startsWith('#')\n      );\n    if (lines.length > 0) meta.title = lines[0];\n  }\n\n  return meta;\n}\n\nconst textMeta = parseTextMeta(extractedText);\n\n// ── 3. Parse filename as fallback ──\nconst baseName = fileName.replace(/\\.[^.]+$/, '');\nconst nameParts = baseName.split(/[_\\-]+/);\n\n// Use the FULL filename (minus extension) as the doc_id.\n// This prevents collisions between e.g. \"01-product-overview\" and \"10-product-status\".\nconst filenameDocId = baseName.toLowerCase().replace(/[^a-z0-9\\-]/g, '-');\n\n// Tenant from filename is unreliable — let metadata override it\nconst filenameTenantId = '';\n\n// Title from filename (skip numeric prefix)\nconst filenameTitle = nameParts.slice(1).join(' ')\n  .replace(/[-_]+/g, ' ')\n  .replace(/\\b\\w/g, c => c.toUpperCase());\n\n// ── 4. Resolve file type ──\nconst rawExtension = file.fileExtension || '';\nconst fromFileName = (file.fileName || '').split('.').pop() || '';\nconst mime = (file.mimeType || '').toLowerCase();\n\nconst fromMimeType =\n  mime.includes('pdf') ? 'pdf' :\n  mime.includes('wordprocessingml.document') ? 'docx' :\n  mime.includes('markdown') ? 'md' :\n  mime.includes('text') ? 'txt' : '';\n\nconst fileType = (\n  source.file_type || rawExtension || fromFileName || fromMimeType || ''\n).toLowerCase();\n\n// ── 5. Resolve IDs and metadata ──\nconst tenant_id =\n  source.tenant_id || textMeta.tenant_id || filenameTenantId || 'b2b-saas-demo';\n\nconst doc_id =\n  textMeta.doc_id || source.doc_id || filenameDocId || `doc-${Date.now()}`;\n\nconst title =\n  textMeta.title || source.title || filenameTitle || 'Untitled Document';\n\nconst category =\n  textMeta.category || source.category || 'general';\n\nconst version =\n  textMeta.version || source.version || '1.0';\n\nconst last_updated =\n  textMeta.last_updated || source.last_updated ||\n  new Date().toISOString().slice(0, 10);\n\nreturn [{\n  json: {\n    ...source,\n    extracted_text: extractedText,\n    tenant_id,\n    doc_id,\n    title,\n    file_type: fileType,\n    industry_pack: source.industry_pack || 'saas',\n    category,\n    version,\n    last_updated\n  },\n  binary: $binary\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        576,
-        160
+        592,
+        -160
       ],
       "id": "fb59fbf7-98f6-4bd9-99c2-61f8723b1c7d",
       "name": "[INGEST] - Normalize Document"
@@ -914,8 +863,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        800,
-        160
+        816,
+        -160
       ],
       "id": "fcf82747-ee76-439d-81e8-52148c71359b",
       "name": "[INGEST] - Check Previous Ingestion",
@@ -934,8 +883,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1024,
-        160
+        1040,
+        -160
       ],
       "id": "70d1c569-f183-4d06-9d0d-19642d38171e",
       "name": "[INGEST] - Evaluate Previous Ingestion"
@@ -968,8 +917,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1248,
-        160
+        1264,
+        -160
       ],
       "id": "a84db97a-18bf-4c29-9efb-9e48ac4b33e9",
       "name": "[INGEST] - Existing Document?"
@@ -1001,8 +950,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1472,
-        96
+        1488,
+        -224
       ],
       "id": "f6befd35-06c5-4e27-ba6e-2feba4fd1fe9",
       "name": "[INGEST] - Delete Existing Vectors",
@@ -1020,8 +969,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1696,
-        96
+        1712,
+        -224
       ],
       "id": "1dc3cd9c-ac95-4a90-bfc5-ab26160024f9",
       "name": "[INGEST] - Restore Document Context"
@@ -1054,21 +1003,21 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1920,
-        160
+        1936,
+        -160
       ],
       "id": "60822cfd-7cae-420f-9eac-952a89455894",
       "name": "[INGEST] - Validate Extracted Text"
     },
     {
       "parameters": {
-        "jsCode": "// Header-aware chunking per chunking-strategy.md\n// 1. Split on ## / ### headings\n// 2. If section > 500 tokens (~2000 chars), sub-split into ~400-token chunks with 50-token overlap\n// 3. Never split mid-sentence\n// 4. Prepend title + section_heading to embedded text for better retrieval\n\nconst doc = $json;\nconst text = doc.extracted_text || '';\nconst headingRegex = /^(#{2,3})\\s+(.*)$/gm;\n\nlet sections = [];\nlet lastIndex = 0;\nlet lastHeading = doc.title;\nlet match;\nconst matches = [...text.matchAll(headingRegex)];\n\nif (matches.length === 0) {\n  sections.push({ heading: doc.title, body: text });\n} else {\n  matches.forEach((m, i) => {\n    const start = m.index;\n    if (i === 0 && start > 0) {\n      sections.push({ heading: doc.title, body: text.slice(0, start).trim() });\n    }\n    const end = i + 1 < matches.length ? matches[i + 1].index : text.length;\n    sections.push({ heading: m[2].trim(), body: text.slice(start, end).replace(headingRegex, '').trim() });\n  });\n}\n\nconst CHARS_PER_CHUNK = 1600; // ~400 tokens\nconst OVERLAP_CHARS = 200;    // ~50 tokens\n\nfunction splitBySentence(body, maxChars, overlap) {\n  const sentences = body.match(/[^.!?]+[.!?]+(\\s|$)/g) || [body];\n  const chunks = [];\n  let current = '';\n  for (const s of sentences) {\n    if ((current + s).length > maxChars && current.length > 0) {\n      chunks.push(current.trim());\n      const overlapText = current.slice(-overlap);\n      current = overlapText + s;\n    } else {\n      current += s;\n    }\n  }\n  if (current.trim()) chunks.push(current.trim());\n  return chunks;\n}\n\nconst chunks = [];\nlet chunkIndex = 0;\nfor (const section of sections) {\n  if (!section.body) continue;\n  const bodyChunks = section.body.length <= 2000\n    ? [section.body]\n    : splitBySentence(section.body, CHARS_PER_CHUNK, OVERLAP_CHARS);\n\n  for (const body of bodyChunks) {\n    chunkIndex += 1;\n    chunks.push({\n      chunk_id: `${doc.doc_id}-c${chunkIndex}`,\n      doc_id: doc.doc_id,\n      tenant_id: doc.tenant_id,\n      industry_pack: doc.industry_pack,\n      title: doc.title,\n      section_heading: section.heading,\n      category: doc.category,\n      version: doc.version,\n      last_updated: doc.last_updated,\n      chunk_index: chunkIndex,\n      embed_text: `${doc.title} — ${section.heading}\\n${body}`,\n      text: body\n    });\n  }\n}\n\nreturn chunks.map(c => ({ json: c }));"
+        "jsCode": "// Multi-format chunker.\n// Emits full context (title + heading + body) as 'text' so the vector loader embeds real content.\n\nconst doc = $json;\nlet text = doc.extracted_text || '';\n\ntext = text.replace(/\\r\\n/g, '\\n');\n\nconst clean = (s) => String(s || '').replace(/^#+\\s*/, '').trim();\n\n// ── Strategy 1: markdown headings ──\nconst mdHeadingRegex = /^(#{1,3})\\s+(.*)$/gm;\nconst mdMatches = [...text.matchAll(mdHeadingRegex)];\n\nlet sections = [];\n\nif (mdMatches.length >= 2) {\n  mdMatches.forEach((m, i) => {\n    const start = m.index;\n    if (i === 0 && start > 0) {\n      sections.push({\n        heading: clean(doc.title),\n        body: text.slice(0, start).trim()\n      });\n    }\n    const end = i + 1 < mdMatches.length ? mdMatches[i + 1].index : text.length;\n    sections.push({\n      heading: clean(m[2]),\n      body: text.slice(start, end).replace(mdHeadingRegex, '').trim()\n    });\n  });\n} else {\n  // ── Strategy 2: heuristic heading detection ──\n  const lines = text.split('\\n');\n\n  const looksLikeHeading = (line) => {\n    const t = line.trim();\n    if (!t) return false;\n    if (t.length > 100) return false;\n    if (/[.,;:!]$/.test(t)) return false;\n    if (/^\\d+\\s*$/.test(t)) return false;\n    if (/^[-•*]\\s/.test(t)) return false;\n    if (t.split(' ').length > 15) return false;\n\n    const isTitleish = /^[A-Z][A-Za-z0-9\\s\\-\\/&()']+$/.test(t);\n    const isQuestion = /\\?$/.test(t) && /^(How|What|Why|When|Where|Can|Does|Is|Are|Do|Will|Should)\\b/i.test(t);\n    const isAllCaps = t.length >= 3 && t === t.toUpperCase() && /[A-Z]/.test(t);\n\n    return isTitleish || isQuestion || isAllCaps;\n  };\n\n  let current = { heading: clean(doc.title), body: [] };\n  const heuristic = [];\n\n  for (const line of lines) {\n    if (looksLikeHeading(line)) {\n      if (current.body.length > 0) {\n        heuristic.push({\n          heading: current.heading,\n          body: current.body.join('\\n').trim()\n        });\n        current = { heading: line.trim(), body: [] };\n      } else {\n        current.heading = line.trim();\n      }\n    } else {\n      current.body.push(line);\n    }\n  }\n\n  if (current.body.length > 0) {\n    heuristic.push({\n      heading: current.heading,\n      body: current.body.join('\\n').trim()\n    });\n  }\n\n  sections = heuristic;\n}\n\n// ── Chunking ──\nconst CHARS_PER_CHUNK = 1600;\nconst OVERLAP_CHARS = 200;\nconst MIN_CHARS = 100;\nconst SKIP_HEADINGS = /^document metadata$/i;\n\nfunction splitBySentence(body, maxChars, overlap) {\n  const sentences = body.match(/[^.!?]+[.!?]+(\\s|$)/g) || [body];\n  const chunks = [];\n  let current = '';\n  for (const s of sentences) {\n    if ((current + s).length > maxChars && current.length > 0) {\n      chunks.push(current.trim());\n      const overlapText = current.slice(-overlap);\n      current = overlapText + s;\n    } else {\n      current += s;\n    }\n  }\n  if (current.trim()) chunks.push(current.trim());\n  return chunks;\n}\n\nconst chunks = [];\nlet chunkIndex = 0;\n\nfor (const section of sections) {\n  if (!section.body) continue;\n  if (SKIP_HEADINGS.test(section.heading)) continue;\n  if (section.body.length < MIN_CHARS) continue;\n\n  const bodyChunks = section.body.length <= 2000\n    ? [section.body]\n    : splitBySentence(section.body, CHARS_PER_CHUNK, OVERLAP_CHARS);\n\n  for (const body of bodyChunks) {\n    chunkIndex += 1;\n\n    // Full context that becomes the embedded text.\n    const fullContext = `${doc.title} — ${section.heading}\\n\\n${body}`;\n\n    chunks.push({\n      chunk_id: `${doc.doc_id}-c${chunkIndex}`,\n      doc_id: doc.doc_id,\n      tenant_id: doc.tenant_id,\n      industry_pack: doc.industry_pack,\n      title: doc.title,\n      section_heading: section.heading,\n      category: doc.category,\n      version: doc.version,\n      last_updated: doc.last_updated,\n      chunk_index: chunkIndex,\n\n      // 'text' is what the loader reads and embeds.\n      // Put the FULL context here, not just the body.\n      text: fullContext,\n\n      // keep the raw body too for debugging\n      body: body\n    });\n  }\n}\n\nreturn chunks.map(c => ({ json: c }));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2528,
-        336
+        2544,
+        16
       ],
       "id": "591f7eaa-8708-4389-9e8e-9fdf27093e19",
       "name": "[INGEST] - Chunk Document"
@@ -1100,8 +1049,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2272,
-        160
+        2288,
+        -160
       ],
       "id": "6a44eed3-647e-44b5-9f2d-1358690eed41",
       "name": "[INGEST] - Validate Chunks"
@@ -1113,33 +1062,16 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2320,
-        432
+        2336,
+        112
       ],
       "id": "a2590d8e-23af-4727-a4ca-0c387719ad44",
       "name": "[INGEST] - Prepare Chunk Validation Error"
     },
     {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        2672,
-        256
-      ],
-      "id": "a965b4f8-ac63-4d30-9aa5-2d6971a7c9aa",
-      "name": "[INGEST] - Gemini Embeddings",
-      "retryOnFail": true,
-      "waitBetweenTries": 3000,
-      "credentials": {
-        "googlePalmApi": {
-          "id": "b86t9ijdbERxzXBC",
-          "name": "Google Gemini(PaLM) Api account 2"
-        }
-      }
-    },
-    {
       "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.text }}",
         "textSplittingMode": "custom",
         "options": {
           "metadata": {
@@ -1191,8 +1123,8 @@
       "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
       "typeVersion": 1.1,
       "position": [
-        2800,
-        352
+        2816,
+        32
       ],
       "id": "41fd73c5-d3e1-4049-af72-e05b5ce3a1f6",
       "name": "[INGEST] - Build Pinecone Documents",
@@ -1206,8 +1138,8 @@
       "type": "@n8n/n8n-nodes-langchain.textSplitterCharacterTextSplitter",
       "typeVersion": 1,
       "position": [
-        2928,
-        464
+        2944,
+        144
       ],
       "id": "587fc2c7-78d0-4aa6-9a28-4c69fcd47779",
       "name": "[INGEST] - Document Text Splitter"
@@ -1229,8 +1161,8 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
       "typeVersion": 1.3,
       "position": [
-        2784,
-        112
+        2800,
+        -208
       ],
       "id": "d51ae3a2-1559-45d1-98d9-bfe100162ad7",
       "name": "[INGEST] - Index Knowledge",
@@ -1243,13 +1175,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const chunkItems = $('[INGEST] - Chunk Document').all();\nconst first = chunkItems[0]?.json || {};\nreturn [{\n  json: {\n    doc_id: first.doc_id,\n    tenant_id: first.tenant_id,\n    title: first.title,\n    chunk_count: chunkItems.length,\n    embedding_model: 'models/gemini-embedding-001',\n    ingested_at: new Date().toISOString(),\n    status: 'success'\n  }\n}];"
+        "jsCode": "const chunkItems = $('[INGEST] - Chunk Document').all();\nconst first = chunkItems[0]?.json || {};\nreturn [{\n  json: {\n    doc_id: first.doc_id,\n    tenant_id: first.tenant_id,\n    title: first.title,\n    chunk_count: chunkItems.length,\n    embedding_model: 'openai/text-embedding-3-large',\n    ingested_at: new Date().toISOString(),\n    status: 'success'\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3120,
-        160
+        3136,
+        -160
       ],
       "id": "29e13283-456b-43c1-8d2e-4d071799353b",
       "name": "[INGEST] - Build Ingestion Result"
@@ -1301,8 +1233,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        3312,
-        240
+        3328,
+        -80
       ],
       "id": "eca33475-a9d7-4778-8195-c3f20edaf27a",
       "name": "[INGEST] - Log Ingestion Run",
@@ -1331,91 +1263,11 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        3536,
-        240
+        3552,
+        -80
       ],
       "id": "0659ea8d-779d-4784-ab70-1520aa9f6e6e",
       "name": "[INGEST] - Respond"
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.errorTrigger",
-      "typeVersion": 1,
-      "position": [
-        -320,
-        736
-      ],
-      "id": "27af2abe-27aa-42be-932c-d5a71812666f",
-      "name": "[ERROR] - Workflow Error Trigger"
-    },
-    {
-      "parameters": {
-        "jsCode": "const error = $json;\n\nconst execution = error.execution || {};\nconst workflow = error.workflow || {};\n\nreturn [{\n  json: {\n    status: 'failed',\n\n    workflow_name: workflow.name || 'Unknown workflow',\n\n    execution_id: execution.id || '',\n\n    failed_node:\n      execution.lastNodeExecuted ||\n      'Unknown node',\n\n    error_message:\n      execution.error?.message ||\n      error.error?.message ||\n      'Unknown error',\n\n    timestamp: new Date().toISOString()\n  }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -96,
-        736
-      ],
-      "id": "08813a39-9158-439e-9e59-2d4ed61ef806",
-      "name": "[ERROR] - Normalize Workflow Error"
-    },
-    {
-      "parameters": {
-        "jsCode": "const data = $json;\n\nreturn {\n  json: {\n    ...data,\n\n    stage: data.failed_node || 'unknown',\n\n    severity: 'error',\n\n    error_type: 'workflow_failure'\n  }\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        128,
-        736
-      ],
-      "id": "f0b14d08-60a9-4ddc-a880-599bd6ba4294",
-      "name": "[ERROR] - Prepare Workflow Error Log"
-    },
-    {
-      "parameters": {
-        "tableId": "ingestion_log",
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "error_message",
-              "fieldValue": "={{ $json.error_message }}"
-            },
-            {
-              "fieldId": "failed_node",
-              "fieldValue": "={{ $json.failed_node }}"
-            },
-            {
-              "fieldId": "error_message",
-              "fieldValue": "={{ $json.error_message }}"
-            },
-            {
-              "fieldId": "status",
-              "fieldValue": "={{ $json.status }}"
-            },
-            {
-              "fieldId": "ingested_at",
-              "fieldValue": "={{ $json.timestamp }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        352,
-        736
-      ],
-      "id": "4f6e53ab-d1c5-424e-abef-1b673033e387",
-      "name": "[ERROR] - Save Workflow Error",
-      "credentials": {
-        "supabaseApi": {
-          "id": "AWapg2iswUxnGF2X",
-          "name": "Supabase account"
-        }
-      }
     },
     {
       "parameters": {
@@ -1445,7 +1297,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        7376,
+        7760,
         1648
       ],
       "id": "f0a21ba9-87b7-477c-969c-8e9c5bdaf0bd",
@@ -1458,7 +1310,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7664,
+        8048,
         1968
       ],
       "id": "3fef5343-d974-43a8-947d-2b4d5eafcd59",
@@ -1471,7 +1323,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7952,
+        8336,
         1968
       ],
       "id": "6ff66933-e25c-49e5-a7db-a4c66a82bc8d",
@@ -1487,7 +1339,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        8176,
+        8560,
         1968
       ],
       "id": "4e24b945-25ea-427b-9834-f76b3b55432e",
@@ -1501,7 +1353,7 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        8304,
+        8688,
         2176
       ],
       "id": "7bd23a81-fbeb-4043-a9d6-026fab98024f",
@@ -1514,7 +1366,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        8528,
+        8912,
         1968
       ],
       "id": "93a5361a-67ad-4d37-8481-fdf6cd79eb14",
@@ -1527,7 +1379,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        9152,
+        9536,
         2000
       ],
       "id": "68408a4e-5153-4ee2-9b30-14ba04948c83",
@@ -1542,7 +1394,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        9376,
+        9760,
         2000
       ],
       "id": "5ac3e237-b467-4e91-bef2-e1ca96f9e2a9",
@@ -1556,7 +1408,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        9632,
+        10016,
         2096
       ],
       "id": "40cba501-448f-42c1-b73d-85081d8102f5",
@@ -1621,7 +1473,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        8928,
+        9312,
         2000
       ],
       "id": "767c0350-1ad4-4af5-a505-0e414a50c526",
@@ -1661,7 +1513,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        1360,
+        1744,
         1840
       ],
       "id": "26ff1661-fa2b-44b4-b683-88272e924c77",
@@ -1681,7 +1533,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1568,
+        1952,
         1840
       ],
       "id": "52e6ea86-259c-4991-8589-abd179781418",
@@ -1694,7 +1546,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7136,
+        7520,
         1024
       ],
       "id": "df6dd559-c3f2-4bdf-a8e9-eb9bef2404bb",
@@ -1707,7 +1559,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7376,
+        7760,
         1024
       ],
       "id": "0482cde6-3db0-45ab-ab59-d4cdb2deb235",
@@ -1723,7 +1575,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        7600,
+        7984,
         1024
       ],
       "id": "5594330d-bfec-4044-aa95-dbbef56366bf",
@@ -1736,7 +1588,7 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        7728,
+        8112,
         1248
       ],
       "id": "f1aaa43d-c016-42f6-baa5-986ab05cea9b",
@@ -1749,7 +1601,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7952,
+        8336,
         1024
       ],
       "id": "4af71e33-1473-435a-a082-e32361884ebb",
@@ -1783,7 +1635,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        8240,
+        8624,
         1024
       ],
       "id": "c14c700e-60b8-4948-8ee5-70c0371ef104",
@@ -1796,7 +1648,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        8976,
+        9360,
         992
       ],
       "id": "397bb6e9-6543-462b-892f-b87ce4b95fbf",
@@ -1809,7 +1661,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        8480,
+        8864,
         1184
       ],
       "id": "d824b480-360e-4be1-8d21-587dcaee6dd1",
@@ -1856,7 +1708,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        9264,
+        9648,
         976
       ],
       "id": "24a3374c-c1d7-4f49-a66e-75da5e20c1f4",
@@ -1909,7 +1761,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        8752,
+        9136,
         1184
       ],
       "id": "24c4cfaf-4992-4644-88f5-c7f42420a1c5",
@@ -1928,7 +1780,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        8976,
+        9360,
         1184
       ],
       "id": "c8bb6af6-f863-491f-8213-cdc3f594ce46",
@@ -1943,7 +1795,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        9200,
+        9584,
         1184
       ],
       "id": "44e83b8a-20bd-43f1-a60f-3d628704cd70",
@@ -1956,7 +1808,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        9552,
+        9936,
         1184
       ],
       "id": "d05ccb0a-dfeb-4fd0-8e07-eb0701168e65",
@@ -1969,7 +1821,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        9536,
+        9920,
         992
       ],
       "id": "ec92a118-21e3-443f-84e8-d6a75b00fd2a",
@@ -1983,7 +1835,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        2096,
+        2624,
         1968
       ],
       "id": "bd47dbcf-1b62-4e59-ab67-493abd385050",
@@ -2003,7 +1855,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        7600,
+        7984,
         1248
       ],
       "id": "c4133eaf-c2fe-4266-a072-3a781eb2027c",
@@ -2023,7 +1875,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        5040,
+        5424,
         1968
       ],
       "id": "970ae680-59db-411c-a7c0-72a66882c144",
@@ -2043,7 +1895,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        9264,
+        9648,
         1392
       ],
       "id": "46fa0a16-38f8-487e-8db9-b05a9fce0083",
@@ -2063,7 +1915,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        8176,
+        8560,
         2176
       ],
       "id": "199753bd-e121-49f4-b4c8-7529575407c8",
@@ -2083,7 +1935,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        9440,
+        9824,
         2208
       ],
       "id": "5bcd5008-ea72-455c-a5b5-9e99c87f2b07",
@@ -2124,7 +1976,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        6016,
+        6400,
         1808
       ],
       "id": "9d2eaf5d-e47e-4acc-8d7e-cdd4f5c38cf1",
@@ -2137,7 +1989,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6688,
+        7072,
         2016
       ],
       "id": "e69d25eb-5a8f-49b2-84e5-5138468d3598",
@@ -2171,7 +2023,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        6240,
+        6624,
         1968
       ],
       "id": "27b69cdb-1ee3-427f-8bab-f948b0be2ff4",
@@ -2215,7 +2067,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2736,
+        3120,
         1872
       ],
       "id": "da0bf95b-720c-41d8-8680-2eb9e8a39ff2",
@@ -2231,7 +2083,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        3184,
+        3568,
         1760
       ],
       "id": "b288c024-b6a0-4d62-9793-27ee4402d37f",
@@ -2244,7 +2096,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2960,
+        3344,
         1760
       ],
       "id": "f9b48a58-ac25-45cf-b5d7-ff2acc65021d",
@@ -2257,7 +2109,7 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        3328,
+        3712,
         2000
       ],
       "id": "45f57d7c-96b0-435a-925b-50cd4d5a5eca",
@@ -2271,7 +2123,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        3200,
+        3584,
         2000
       ],
       "id": "ca1e62ac-59d6-4267-8965-0e164730b37e",
@@ -2290,7 +2142,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3536,
+        3920,
         1760
       ],
       "id": "755bef4f-e653-4624-8c80-ef229a7caf92",
@@ -2324,7 +2176,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        3712,
+        4096,
         1760
       ],
       "id": "a1fe1139-9a23-4437-a026-b71132acd76f",
@@ -2339,8 +2191,8 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -656,
-        -432
+        -640,
+        -752
       ],
       "typeVersion": 1,
       "id": "8747b321-b2fb-442f-8e60-2a1ef5559dd1",
@@ -2355,8 +2207,8 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        752,
-        -432
+        768,
+        -752
       ],
       "typeVersion": 1,
       "id": "c50aba92-c3ec-4691-9e90-d113bd80d398",
@@ -2371,8 +2223,8 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        2496,
-        -432
+        2512,
+        -752
       ],
       "typeVersion": 1,
       "id": "813c7964-af30-490d-8822-427484d175fd",
@@ -2387,8 +2239,8 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        3056,
-        -432
+        3072,
+        -752
       ],
       "typeVersion": 1,
       "id": "08a4bce4-0ad2-4a4e-a30a-1a4cbf2ba088",
@@ -2397,9 +2249,9 @@
     {
       "parameters": {
         "content": "CHAT INTAKE\n\nPurpose:\nAccept and validate customer messages.\n\nRequired:\n• tenant_id\n• customer_id\n• conversation_id\n• text\n\nInvalid request:\n→ Stop processing\n→ Log\n→ Return validation response\n\nPrinciple:\nBad input never reaches AI processing.",
-        "height": 1104,
+        "height": 1072,
         "width": 752,
-        "color": "#4D4C4D"
+        "color": "#141414"
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
@@ -2413,9 +2265,9 @@
     {
       "parameters": {
         "content": "CONTEXT & MEMORY\n\nPurpose:\nBuild the complete context before AI processing.\n\nTenant context:\n• industry\n• thresholds\n• channels\n\nCustomer context:\n• customer_id\n• email\n• name\n• plan_tier\n• account_status\n• custom_fields\n\nConversation memory:\n• prior turns\n• scoped by tenant_id + conversation_id\n\nOutput:\nUnified conversation context",
-        "height": 1104,
-        "width": 832,
-        "color": "#3D3B4F"
+        "height": 1056,
+        "width": 1188,
+        "color": "#2E2C3A"
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
@@ -2431,11 +2283,11 @@
         "content": "INTENT + RISK CLASSIFICATION\n\nPurpose:\nUnderstand the latest customer message.\n\nProduces:\n• intent\n• risk_flags\n• requires_account_context\n\nIntent examples:\nbilling\ntechnical\naccount\ngeneral\n\nRisk examples:\nsecurity\nbilling_dispute\nlegal\nchurn_threat\n\nImportant:\nClassification informs routing.\nIt does NOT decide everything.",
         "height": 1040,
         "width": 832,
-        "color": "#3B4E6D"
+        "color": "#2D3B52"
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        1856,
+        2240,
         1104
       ],
       "typeVersion": 1,
@@ -2447,11 +2299,11 @@
         "content": "RAG RETRIEVAL\n\nPurpose:\nFind trusted knowledge relevant to the customer question.\n\nFlow:\nMessage\n→ Query embedding\n→ Tenant-scoped Pinecone search\n→ Build context\n→ Validate retrieval\n\nOutput:\nretrieved_context\n+\nretrieval_score\n\nFailure:\nNo useful knowledge\n→ No-knowledge path",
         "height": 1104,
         "width": 832,
-        "color": "#725555"
+        "color": "#604848"
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        3872,
+        4256,
         1056
       ],
       "typeVersion": 1,
@@ -2463,11 +2315,11 @@
         "content": "RESPONSE GENERATION\n\nPurpose:\nGenerate a grounded customer-facing answer.\n\nAI receives:\n• retrieved knowledge\n• customer account context\n• conversation history\n• latest message\n\nRules:\n• Do not invent policy\n• Do not invent account data\n• Do not expose secrets\n• Use customer context when available\n\nOutput:\nresponse_text\n+\nconfidence_score",
         "height": 1104,
         "width": 832,
-        "color": "#896843"
+        "color": "#60492E"
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        4736,
+        5120,
         1056
       ],
       "typeVersion": 1,
@@ -2479,11 +2331,11 @@
         "content": "DETERMINISTIC GUARDRAILS\n\nPurpose:\nControl whether the AI can answer safely.\n\nChecks:\n1. Risk\n2. Account context requirement\n3. Customer context availability\n4. Retrieval quality\n\nOutcomes:\n→ RESPOND\n→ ESCALATE\n\nPrinciple:\nLLM generates.\nGuardrails make the final decision.",
         "height": 1104,
         "width": 1424,
-        "color": "#74495E"
+        "color": "#4A303D"
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        5616,
+        6000,
         1056
       ],
       "typeVersion": 1,
@@ -2495,11 +2347,11 @@
         "content": "ACTIVE CASE DETECTION\n\nPurpose:\nDetermine whether this conversation currently\nhas an unresolved escalation case.\n\nLookup:\ntenant_id\n+\nconversation_id\n+\nawaiting_customer_info\n\nImportant:\nFinding an active case does NOT automatically mean\nthe new message belongs to that case.\n\nThe new message must still be evaluated.",
         "height": 1088,
         "width": 1664,
-        "color": "#425C4D"
+        "color": "#29382F"
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        1184,
+        1568,
         1072
       ],
       "typeVersion": 1,
@@ -2511,11 +2363,11 @@
         "content": "ESCALATION INTAKE\n\nPurpose:\nUnderstand what a human agent needs to investigate.\n\nDetermines:\n• escalation type\n• required information\n• provided information\n• missing information\n• case_ready\n• handoff_mode\n• next_action\n\nPrinciple:\nCollect useful context.\nDo not ask for information already available.",
         "height": 1072,
         "width": 1424,
-        "color": "#54797D"
+        "color": "#384F52"
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        7232,
+        7616,
         1760
       ],
       "typeVersion": 1,
@@ -2527,11 +2379,11 @@
         "content": "CASE MANAGEMENT\n\nPurpose:\nPersist and update escalation state.\n\nStates:\nAWAITING_CUSTOMER_INFO\nREADY_FOR_AGENT\n\nStores:\n• case_id\n• customer_id\n• conversation_id\n• escalation type\n• required information\n• provided information\n• missing information\n• case context\n\nRule:\nUpdate existing case.\nDo not create a new case for every follow-up.",
         "height": 1072,
         "width": 1072,
-        "color": "#46516D"
+        "color": "#2E3647"
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        8688,
+        9072,
         1760
       ],
       "typeVersion": 1,
@@ -2543,11 +2395,11 @@
         "content": "CASE RELEVANCE\n\nPurpose:\nDetermine whether the new customer message\nbelongs to the existing escalation.\n\nTRUE:\n→ Continue existing case\n\nFALSE:\n→ Return to normal RAG\n\nWhy:\nA customer can change topics inside the same conversation.\n\nExample:\n\nExisting case:\nDuplicate billing charge\n\nNew message:\n\"How do I refresh my API key?\"\n\n→ NOT a case follow-up\n→ Normal RAG",
         "height": 1072,
         "width": 992,
-        "color": "#614C61"
+        "color": "#443645"
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        2864,
+        3248,
         1072
       ],
       "typeVersion": 1,
@@ -2559,11 +2411,11 @@
         "content": "CASE FOLLOW-UP\n\nPurpose:\nProcess new information from the customer\nagainst an existing escalation case.\n\nFlow:\nCustomer reply\n→ Compare with missing information\n→ Update case\n→ Check readiness\n\nIf incomplete:\n→ Ask only for remaining useful information\n\nIf complete:\n→ READY_FOR_AGENT",
         "height": 1072,
         "width": 1568,
-        "color": "#5C7A52"
+        "color": "#3E5337"
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        7072,
+        7456,
         560
       ],
       "typeVersion": 1,
@@ -2575,11 +2427,11 @@
         "content": "CUSTOMER ESCALATION EXPERIENCE\n\nPurpose:\nMake escalation useful and specific.\n\nResponses should:\n• acknowledge the actual problem\n• show empathy\n• explain what is happening\n• request only missing information\n• explain the next step\n\nREADY:\n→ Tell customer human review is next\n\nWAITING:\n→ Tell customer what information is still needed",
         "height": 1072,
         "width": 1040,
-        "color": "#624141"
+        "color": "#3C2A2A"
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        8656,
+        9040,
         560
       ],
       "typeVersion": 1,
@@ -2591,32 +2443,16 @@
         "content": "MEMORY + API RESPONSE\n\nPurpose:\nPersist the conversation and return the final\nresponse to the frontend.\n\nMemory:\n• customer message\n• AI response\n• intent\n• confidence\n• retrieval score\n\nAPI response:\n• tenant_id\n• customer_id\n• conversation_id\n• response_text\n• decision\n• intent\n• confidence\n• retrieval score\n• risk flags\n• case_id\n• escalation_state",
         "height": 1104,
         "width": 1040,
-        "color": "#784686"
+        "color": "#51305A"
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        9792,
+        10176,
         1280
       ],
       "typeVersion": 1,
       "id": "757ca7b5-3689-4441-9b25-a530ca76c564",
       "name": "Sticky Note16"
-    },
-    {
-      "parameters": {
-        "content": "ERROR HANDLING + OBSERVABILITY\n\nPurpose:\nMake failures visible, structured and traceable.\n\nCaptures:\n• tenant\n• error message\n• failed node\n• status\n• timestamp\n\nFailure types:\n• invalid request\n• extraction failure\n• validation failure\n• database failure\n• workflow failure\n\nPrinciple:\nNo silent failures.",
-        "height": 416,
-        "width": 1216,
-        "color": "#492222"
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        -672,
-        624
-      ],
-      "typeVersion": 1,
-      "id": "e0af68e3-c1f5-4b7d-8916-7c2e9c35b7ad",
-      "name": "Sticky Note17"
     },
     {
       "parameters": {
@@ -2628,7 +2464,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "position": [
         1488,
-        -1296
+        -1472
       ],
       "typeVersion": 1,
       "id": "2a09d529-fe14-4ed8-84ea-6f3f256828bb",
@@ -2644,7 +2480,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "position": [
         2192,
-        -1296
+        -1472
       ],
       "typeVersion": 1,
       "id": "4ac7315d-3183-4248-a53b-11e8bb21ba7d",
@@ -2660,7 +2496,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "position": [
         2896,
-        -1296
+        -1472
       ],
       "typeVersion": 1,
       "id": "0034fe08-ead5-4a7e-9f0a-4bd8b8830255",
@@ -2673,56 +2509,278 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        9504,
+        9888,
         1392
       ],
       "id": "4aa1122d-8701-43df-b77c-bb49eb55c2ee",
       "name": "[ESCALATION] - Restore Response Context"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ ($binary.file?.fileExtension || $json.file_type || '').toLowerCase() }}",
+                    "rightValue": "pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "9374e513-708d-4671-9751-899ef91b1cbb"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "35df2f2d-6528-43ed-9e49-ca31f6348122",
+                    "leftValue": "={{ ($binary.file?.fileExtension || $json.file_type || '').toLowerCase() }}",
+                    "rightValue": "=docx",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "3d085064-b25c-4841-96a9-d99967a9a5d9",
+                    "leftValue": "={{ ($binary.file?.fileExtension || $json.file.type || \"\").toLowerCase() }}",
+                    "rightValue": "md",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        144,
+        -160
+      ],
+      "id": "927160df-11a4-4a79-828c-be2681f51f65",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "const JSZip = require('jszip');\n\nconst binary = $binary?.file;\n\nif (!binary) {\n  throw new Error('No DOCX file was found.');\n}\n\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'file');\n\nconst zip = await JSZip.loadAsync(buffer);\n\nconst documentXml = zip.file('word/document.xml');\n\nif (!documentXml) {\n  throw new Error('Invalid DOCX: word/document.xml was not found.');\n}\n\nconst xml = await documentXml.async('text');\n\n/*\n  DOCX paragraphs are represented by:\n  <w:p> ... </w:p>\n\n  Text runs are represented by:\n  <w:t>text</w:t>\n*/\n\nconst paragraphs = [];\n\nconst paragraphMatches = xml.match(/<w:p\\b[^>]*>[\\s\\S]*?<\\/w:p>/g) || [];\n\nfor (const paragraph of paragraphMatches) {\n  const textParts = [];\n  const textMatches = paragraph.match(/<w:t\\b[^>]*>[\\s\\S]*?<\\/w:t>/g) || [];\n\n  for (const tag of textMatches) {\n    const text = tag\n      .replace(/^<w:t\\b[^>]*>/, '')\n      .replace(/<\\/w:t>$/, '');\n\n    textParts.push(text);\n  }\n\n  if (textParts.length) {\n    paragraphs.push(\n      textParts\n        .join('')\n        .replace(/&amp;/g, '&')\n        .replace(/&lt;/g, '<')\n        .replace(/&gt;/g, '>')\n        .replace(/&quot;/g, '\"')\n        .replace(/&#39;/g, \"'\")\n        .trim()\n    );\n  }\n}\n\nconst extractedText = paragraphs\n  .filter(Boolean)\n  .join('\\n\\n');\n\nif (!extractedText.trim()) {\n  throw new Error('DOCX contained no extractable text.');\n}\n\nreturn [{\n  json: {\n    ...$json,\n    extracted_text: extractedText,\n    file_name: binary.fileName || '',\n    file_type: 'docx'\n  },\n  binary: $binary\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        -112
+      ],
+      "id": "4f833a9b-348a-4f52-84e9-713786a53977",
+      "name": "[INGEST] - Extract DOCX Text"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "88238dab-8da7-4028-a3cf-3b0267e53cb0",
+              "leftValue": "={{ (() => {\n  const t = ($json.text || '').trim();\n  if (t.length === 0 || t.length > 40) return false;\n  const lower = t.toLowerCase();\n  const risk = /refund|charge|dispute|chargeback|cancel|lawyer|legal|lawsuit|regulat|hack|breach|compromis|fraud|suspicious|unauthorized|stolen|leak|threat/i;\n  const intent = /bill|invoic|payment|plan|pricing|upgrade|downgrade|subscription|technical|error|bug|crash|broken|api|integrat|login|sign.?in|password|account|profile|team|role|permission|feature|document|upload|how|what|why|when|where|who/i;\n  if (risk.test(lower) || intent.test(lower)) return false;\n  return true;\n})() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2256,
+        1856
+      ],
+      "id": "d4f2a256-f927-482d-870a-b31221eec188",
+      "name": "[RAG] - Is Trivial Message?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const original = $json;\n\nreturn [{\n  json: {\n    ...original,\n    intent: 'general',\n    risk_flags: [],\n    requires_account_context: false\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2944,
+        1664
+      ],
+      "id": "30de0bca-aa57-4c31-b6d0-cdcddf01e4c7",
+      "name": "[RAG] - Default Intent Signals"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1040,
+        1744
+      ],
+      "id": "8624a0fd-9a9e-4971-8236-4a306326fa3d",
+      "name": "[CHAT] - Merge Context Loads"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\nconst text = (d.text || '').trim().toLowerCase();\n\nlet response;\nif (/^(hi|hello|hey|yo|sup|howdy|good\\s*(morning|afternoon|evening))\\b/i.test(text)) {\n  response = 'Hi! How can I help you today?';\n} else if (/^(thanks|thank you|thx|ty|appreciate)/i.test(text)) {\n  response = \"You're welcome! Anything else I can help with?\";\n} else if (/^(ok|okay|cool|got it|alright|sure|yeah|yep|nice)\\b/i.test(text)) {\n  response = \"Great! Let me know if you have any other questions.\";\n} else if (/^(bye|goodbye|see ya|later|cya)/i.test(text)) {\n  response = \"Thanks for reaching out. Have a great day!\";\n} else {\n  response = 'Hi! How can I help you today?';\n}\n\nreturn [{\n  json: {\n    tenant_id: d.tenant_id || '',\n    conversation_id: d.conversation_id || '',\n    customer_id: d.customer_id || '',\n    response_text: response,\n    decision: 'respond',\n    decision_reason: 'trivial_message',\n    intent: 'general',\n    confidence_score: 1.0,\n    retrieval_score: 0,\n    risk_flags: [],\n    requires_account_context: false,\n    escalation_reasons: [],\n    case_id: null,\n    escalation_state: null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5552,
+        1584
+      ],
+      "id": "f2d02e5d-ab1a-4840-8ff3-ffcfb1fc0356",
+      "name": "[RAG] - Fast Path Response"
+    },
+    {
+      "parameters": {
+        "model": "=openai/text-embedding-3-large",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2720,
+        -48
+      ],
+      "id": "96e0eac5-d838-4cca-b7e1-fd277a25e373",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "z702egARnz8Ah7y0",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "=openai/text-embedding-3-large",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        4352,
+        1856
+      ],
+      "id": "7606a017-562d-46e3-8fc7-fe0f5d18a706",
+      "name": "[RAG] - OpenAI Query Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "z702egARnz8Ah7y0",
+          "name": "OpenAI account"
+        }
+      }
     }
   ],
   "pinData": {
-    "[CHAT] - Receive Message": [
+    "[INGEST] - Receive Document": [
       {
         "json": {
           "headers": {
             "host": "f6nvuwee.rpcl.app",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
-            "content-length": "179",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+            "content-length": "11276",
             "accept": "*/*",
             "accept-encoding": "gzip, br",
             "accept-language": "en-US,en;q=0.9",
             "cdn-loop": "cloudflare; loops=1",
-            "cf-connecting-ip": "197.211.59.198",
-            "cf-ipcountry": "NG",
-            "cf-ray": "a31ec30a8867f422-LHR",
+            "cf-connecting-ip": "169.150.197.167",
+            "cf-ipcountry": "CH",
+            "cf-ray": "a38ff76b58808822-ZRH",
             "cf-visitor": "{\"scheme\":\"https\"}",
-            "content-type": "application/json",
-            "origin": "https://id-preview--4a1573b3-107b-4e83-b75f-752e9c7619e9.lovable.app",
+            "content-type": "multipart/form-data; boundary=----WebKitFormBoundaryTJSaGPaWfmyqwo5V",
+            "origin": "https://ai-customer-support-agent-frontend-eta.vercel.app",
             "priority": "u=1, i",
-            "referer": "https://id-preview--4a1573b3-107b-4e83-b75f-752e9c7619e9.lovable.app/",
-            "sec-ch-ua": "\"Not=A?Brand\";v=\"99\", \"Google Chrome\";v=\"151\", \"Chromium\";v=\"151\"",
+            "referer": "https://ai-customer-support-agent-frontend-eta.vercel.app/",
+            "sec-ch-ua": "\"Chromium\";v=\"152\", \"Not?A_Brand\";v=\"24\", \"Google Chrome\";v=\"152\"",
             "sec-ch-ua-mobile": "?0",
             "sec-ch-ua-platform": "\"Windows\"",
             "sec-fetch-dest": "empty",
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "cross-site",
-            "x-forwarded-for": "197.211.59.198, 162.158.216.10",
+            "x-forwarded-for": "169.150.197.167, 162.158.217.53",
             "x-forwarded-host": "f6nvuwee.rpcl.app",
             "x-forwarded-port": "443",
             "x-forwarded-proto": "https",
             "x-forwarded-server": "18a48e0c4bd7",
-            "x-real-ip": "162.158.216.10"
+            "x-real-ip": "162.158.217.53"
           },
           "params": {},
           "query": {},
           "body": {
-            "tenant_id": "b2b-saas-demo",
-            "conversation_id": "73e27f3e-2e64-45cf-9e11-f88ff7a6028e",
-            "customer_id": "8808def2-1a90-4178-9a16-b4f5ce93511d",
-            "text": "I was charged twice this month"
+            "tenant_id": "b2b-saas-demo"
           },
-          "webhookUrl": "https://f6nvuwee.rpcl.app/webhook/conversation-message",
+          "webhookUrl": "https://f6nvuwee.rpcl.app/webhook/kb-ingest",
           "executionMode": "production"
+        },
+        "binary": {
+          "file": {
+            "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "fileExtension": "docx",
+            "data": "filesystem-v2",
+            "fileName": "FlowStack-Billing-and-Payments.docx",
+            "id": "filesystem-v2:workflows/d01SQgP4IT91lQup/executions/1384/binary_data/843cead8-f835-43ea-b8ad-da95e54aa1f2",
+            "fileSize": "10.9 kB",
+            "bytes": 10897
+          }
         },
         "pairedItem": {
           "item": 0
@@ -2802,7 +2860,7 @@
       "main": [
         [
           {
-            "node": "[INGEST] - Route File Type",
+            "node": "Switch",
             "type": "main",
             "index": 0
           }
@@ -2952,6 +3010,16 @@
             "node": "[CHAT] - Load Tenant Config",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "[CHAT] - Load Customer Context",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "[CHAT] - Load Conversation History",
+            "type": "main",
+            "index": 0
           }
         ],
         [
@@ -2967,9 +3035,9 @@
       "main": [
         [
           {
-            "node": "[CHAT] - Load Customer Context",
+            "node": "[CHAT] - Merge Context Loads",
             "type": "main",
-            "index": 0
+            "index": 2
           }
         ]
       ]
@@ -2978,9 +3046,9 @@
       "main": [
         [
           {
-            "node": "[CHAT] - Load Conversation History",
+            "node": "[CHAT] - Merge Context Loads",
             "type": "main",
-            "index": 0
+            "index": 1
           }
         ]
       ]
@@ -2989,7 +3057,7 @@
       "main": [
         [
           {
-            "node": "[CHAT] - Build Conversation Context",
+            "node": "[CHAT] - Merge Context Loads",
             "type": "main",
             "index": 0
           }
@@ -3067,17 +3135,6 @@
         ]
       ]
     },
-    "[RAG] - Gemini Query Embeddings": {
-      "ai_embedding": [
-        [
-          {
-            "node": "[RAG] - Retrieve Knowledge",
-            "type": "ai_embedding",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "[RAG] - Build Retrieved Context": {
       "main": [
         [
@@ -3145,24 +3202,6 @@
         [
           {
             "node": "[GUARDRAIL] - Prepare Decision Context",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "[INGEST] - Route File Type": {
-      "main": [
-        [
-          {
-            "node": "[INGEST] - Extract PDF Text",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "[INGEST] - Extract Markdown Text",
             "type": "main",
             "index": 0
           }
@@ -3322,17 +3361,6 @@
         ]
       ]
     },
-    "[INGEST] - Gemini Embeddings": {
-      "ai_embedding": [
-        [
-          {
-            "node": "[INGEST] - Index Knowledge",
-            "type": "ai_embedding",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "[INGEST] - Build Pinecone Documents": {
       "ai_document": [
         [
@@ -3386,44 +3414,6 @@
             "index": 0
           }
         ]
-      ]
-    },
-    "[ERROR] - Workflow Error Trigger": {
-      "main": [
-        [
-          {
-            "node": "[ERROR] - Normalize Workflow Error",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "[ERROR] - Normalize Workflow Error": {
-      "main": [
-        [
-          {
-            "node": "[ERROR] - Prepare Workflow Error Log",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "[ERROR] - Prepare Workflow Error Log": {
-      "main": [
-        [
-          {
-            "node": "[ERROR] - Save Workflow Error",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "[ERROR] - Save Workflow Error": {
-      "main": [
-        []
       ]
     },
     "If": {
@@ -3568,7 +3558,7 @@
       "main": [
         [
           {
-            "node": "[RAG] - Build Intent Prompt",
+            "node": "[RAG] - Is Trivial Message?",
             "type": "main",
             "index": 0
           }
@@ -3960,15 +3950,133 @@
           }
         ]
       ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Extract PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[INGEST] - Extract DOCX Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[INGEST] - Extract Markdown Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[INGEST] - Extract DOCX Text": {
+      "main": [
+        [
+          {
+            "node": "[INGEST] - Normalize Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Is Trivial Message?": {
+      "main": [
+        [
+          {
+            "node": "[RAG] - Default Intent Signals",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[RAG] - Build Intent Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Default Intent Signals": {
+      "main": [
+        [
+          {
+            "node": "[RAG] - Fast Path Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[CHAT] - Merge Context Loads": {
+      "main": [
+        [
+          {
+            "node": "[CHAT] - Build Conversation Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - Fast Path Response": {
+      "main": [
+        [
+          {
+            "node": "[MEMORY] - Save Assistant Turn",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "[CHAT] - Build Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "[INGEST] - Index Knowledge",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RAG] - OpenAI Query Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "[RAG] - Retrieve Knowledge",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "kwVv4CN524k2URvN",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner"
   },
-  "versionId": "ad3fea90-94b2-432d-a4a7-36d27fb6bdfc",
+  "versionId": "7f1a22d7-0e21-4010-aee9-0571fd410bbe",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "797e1d7f5c66ac05aca3e1235fdd862ac6b84011015dc4a03bdfe55d9f3791ca"
